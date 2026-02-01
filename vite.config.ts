@@ -14,6 +14,11 @@ const config = defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  test: {
+    globals: true,
+    environment: 'node',
+    include: ['src/**/*.test.ts', 'src/**/__tests__/*.ts'],
+  },
   plugins: [
     devtools(),
     nitro(),

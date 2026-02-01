@@ -42,22 +42,6 @@ export function ControlPanel() {
 				</div>
 			</div>
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-				{enabled.batchSize && (
-					<label className="flex flex-col gap-1 text-sm">
-						<span className="text-slate-300">Batch size (1–10)</span>
-						<input
-							type="range"
-							min={1}
-							max={10}
-							value={config.batchSize}
-							onChange={(e) =>
-								store.updateConfig({ batchSize: Number(e.target.value) })
-							}
-							className="w-full accent-cyan-500"
-						/>
-						<span className="text-slate-400">{config.batchSize}</span>
-					</label>
-				)}
 				{enabled.pushPull && (
 					<label className="flex flex-col gap-1 text-sm">
 						<span className="text-slate-300">Flow</span>
@@ -73,22 +57,6 @@ export function ControlPanel() {
 							<option value="push">Push</option>
 							<option value="pull">Pull</option>
 						</select>
-					</label>
-				)}
-				{enabled.wipLimit && (
-					<label className="flex flex-col gap-1 text-sm">
-						<span className="text-slate-300">WIP limit (1–30)</span>
-						<input
-							type="range"
-							min={1}
-							max={30}
-							value={config.wipLimit}
-							onChange={(e) =>
-								store.updateConfig({ wipLimit: Number(e.target.value) })
-							}
-							className="w-full accent-cyan-500"
-						/>
-						<span className="text-slate-400">{config.wipLimit}</span>
 					</label>
 				)}
 				{enabled.defectProbability && (

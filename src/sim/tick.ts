@@ -27,6 +27,7 @@ function cloneState(state: SimState): SimState {
 			stationId: st.stationId,
 			inputQueue: [...st.inputQueue],
 			inProcess: st.inProcess.map((s) => ({ ...s })),
+			batchBuffer: [...st.batchBuffer],
 			outputQueue: [...st.outputQueue],
 			defectCount: st.defectCount,
 		})
@@ -48,6 +49,7 @@ function getStationState(state: SimState, stationId: string): StationState {
 		stationId,
 		inputQueue: [],
 		inProcess: [],
+		batchBuffer: [],
 		outputQueue: [],
 		defectCount: 0,
 	}
@@ -55,12 +57,9 @@ function getStationState(state: SimState, stationId: string): StationState {
 	return newSt
 }
 
-function countWip(state: SimState): number {
-	let n = 0
-	for (const st of state.stationStates.values()) {
-		n += st.inputQueue.length + st.inProcess.length + st.outputQueue.length
-	}
-	return n
+function getStationWip(state: SimState, stationId: string): number {
+	const st = getStationState(state, stationId)
+	return st.inputQueue.length + st.inProcess.length + st.batchBuffer.length + st.outputQueue.length
 }
 
 function createItem(state: SimState, stationId: string): Item {
@@ -95,6 +94,7 @@ export function createInitialState(config: SimConfig): SimState {
 			stationId: sc.id,
 			inputQueue: [],
 			inProcess: [],
+			batchBuffer: [],
 			outputQueue: [],
 			defectCount: 0,
 		})
@@ -149,9 +149,7 @@ function processCompletions(state: SimState, config: SimConfig): void {
 				if (config.redBins) {
 					item.status = "waiting"
 					st.outputQueue.push(item.id)
-					continue
-				}
-				if (config.reworkSendsBack) {
+				} else if (config.reworkSendsBack) {
 					const idx = order.indexOf(stationId)
 					if (idx > 0) {
 						const prevId = order[idx - 1]
@@ -170,7 +168,7 @@ function processCompletions(state: SimState, config: SimConfig): void {
 				continue
 			}
 			item.status = "waiting"
-			st.outputQueue.push(item.id)
+			st.batchBuffer.push(item.id)
 		}
 		st.inProcess = stillInProcess
 	}
@@ -182,10 +180,44 @@ function moveOutputToNext(state: SimState, config: SimConfig): void {
 	for (let i = 0; i < order.length; i++) {
 		const stationId = order[i]
 		const st = getStationState(state, stationId)
+		const stationConfig = getStationConfig(config, stationId)
+		const batchSize = Math.max(1, stationConfig?.batchSize ?? config.batchSize ?? 1)
 		const isLast = i === order.length - 1
 		const nextId = isLast ? null : order[i + 1]
 		const nextSt = nextId ? getStationState(state, nextId) : null
 		const nextConfig = nextId ? getStationConfig(config, nextId) : null
+
+		if (st.batchBuffer.length >= batchSize) {
+			const batch = st.batchBuffer.splice(0, batchSize)
+			if (isLast) {
+				for (const itemId of batch) {
+					const item = state.items.get(itemId)
+					if (item) {
+						item.status = "done"
+						item.completedAtTick = state.tick
+					}
+					state.completedIds.push(itemId)
+				}
+			} else if (nextSt && nextConfig && nextId) {
+				const space = nextConfig.bufferBefore - nextSt.inputQueue.length
+				const nextStationCap = nextConfig.wipLimit ?? Number.POSITIVE_INFINITY
+				const nextStationWip = getStationWip(state, nextId)
+				const wipSpace = nextStationCap - nextStationWip
+				if (config.pushOrPull === "pull" && space < batchSize) {
+					st.batchBuffer.unshift(...batch)
+				} else if (wipSpace < batchSize) {
+					st.batchBuffer.unshift(...batch)
+				} else {
+					for (const itemId of batch) {
+						const item = state.items.get(itemId)
+						if (item) item.stationId = nextId
+						nextSt.inputQueue.push(itemId)
+					}
+				}
+			} else {
+				st.batchBuffer.unshift(...batch)
+			}
+		}
 
 		const remaining: string[] = []
 		for (const itemId of st.outputQueue) {
@@ -201,11 +233,17 @@ function moveOutputToNext(state: SimState, config: SimConfig): void {
 				state.completedIds.push(itemId)
 				continue
 			}
-			if (!nextSt || !nextConfig) {
+			if (!nextSt || !nextConfig || !nextId) {
 				remaining.push(itemId)
 				continue
 			}
 			if (config.pushOrPull === "pull" && nextSt.inputQueue.length >= nextConfig.bufferBefore) {
+				remaining.push(itemId)
+				continue
+			}
+			const nextStationCap = nextConfig.wipLimit ?? Number.POSITIVE_INFINITY
+			const nextStationWip = getStationWip(state, nextId)
+			if (nextStationWip >= nextStationCap) {
 				remaining.push(itemId)
 				continue
 			}
@@ -272,16 +310,17 @@ function tryArrivals(state: SimState, config: SimConfig): void {
 	const firstConfig = getStationConfig(config, firstId)
 	if (!firstConfig) return
 
-	const wip = countWip(state)
-	if (wip >= config.wipLimit) return
 	const elapsed = state.tick * config.tickMs
 	const lastArrivalMs = state.lastArrivalTick * config.tickMs
 	if (elapsed - lastArrivalMs < config.arrivalRateMs) return
 
+	const batchSize = firstConfig.batchSize ?? config.batchSize
+	const firstStationWip = getStationWip(state, firstId)
+	const firstStationCap = firstConfig.wipLimit ?? Number.POSITIVE_INFINITY
 	const space = firstConfig.bufferBefore - firstSt.inputQueue.length
 	if (space <= 0) return
 
-	const toAdd = Math.min(config.batchSize, config.wipLimit - wip, space)
+	const toAdd = Math.min(batchSize, firstStationCap - firstStationWip, space)
 	if (toAdd <= 0) return
 
 	for (let i = 0; i < toAdd; i++) {

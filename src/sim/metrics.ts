@@ -3,9 +3,17 @@ import type { SimConfig, SimState } from "./types"
 export function getWip(state: SimState): number {
 	let n = 0
 	for (const st of state.stationStates.values()) {
-		n += st.inputQueue.length + st.inProcess.length + st.outputQueue.length
+		n += st.inputQueue.length + st.inProcess.length + st.batchBuffer.length + st.outputQueue.length
 	}
 	return n
+}
+
+export function getStationWip(state: SimState, stationId: string): number {
+	const st = state.stationStates.get(stationId)
+	if (!st) return 0
+	return (
+		st.inputQueue.length + st.inProcess.length + st.batchBuffer.length + st.outputQueue.length
+	)
 }
 
 export function getThroughput(state: SimState, lastTickCompleted: number): number {

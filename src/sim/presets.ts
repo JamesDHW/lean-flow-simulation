@@ -9,6 +9,8 @@ const defaultStations: StationConfig[] = [
 		capacity: 1,
 		bufferBefore: 5,
 		bufferAfter: 5,
+		batchSize: 3,
+		wipLimit: 5,
 	},
 	{
 		id: "s2",
@@ -17,6 +19,8 @@ const defaultStations: StationConfig[] = [
 		capacity: 1,
 		bufferBefore: 5,
 		bufferAfter: 5,
+		batchSize: 3,
+		wipLimit: 5,
 	},
 	{
 		id: "s3",
@@ -25,6 +29,8 @@ const defaultStations: StationConfig[] = [
 		capacity: 1,
 		bufferBefore: 5,
 		bufferAfter: 5,
+		batchSize: 3,
+		wipLimit: 5,
 	},
 	{
 		id: "s4",
@@ -33,6 +39,8 @@ const defaultStations: StationConfig[] = [
 		capacity: 1,
 		bufferBefore: 5,
 		bufferAfter: 5,
+		batchSize: 3,
+		wipLimit: 5,
 	},
 	{
 		id: "s5",
@@ -41,6 +49,8 @@ const defaultStations: StationConfig[] = [
 		capacity: 1,
 		bufferBefore: 5,
 		bufferAfter: 5,
+		batchSize: 3,
+		wipLimit: 5,
 	},
 	{
 		id: "s6",
@@ -49,6 +59,8 @@ const defaultStations: StationConfig[] = [
 		capacity: 1,
 		bufferBefore: 5,
 		bufferAfter: 5,
+		batchSize: 3,
+		wipLimit: 5,
 	},
 	{
 		id: "s7",
@@ -57,6 +69,8 @@ const defaultStations: StationConfig[] = [
 		capacity: 1,
 		bufferBefore: 5,
 		bufferAfter: 5,
+		batchSize: 3,
+		wipLimit: 5,
 	},
 	{
 		id: "s8",
@@ -65,13 +79,14 @@ const defaultStations: StationConfig[] = [
 		capacity: 1,
 		bufferBefore: 5,
 		bufferAfter: 5,
+		batchSize: 3,
+		wipLimit: 5,
 	},
 ];
 
 const baseConfig: Omit<SimConfig, "stepId" | "seed" | "stations"> = {
 	tickMs: 200,
 	batchSize: 3,
-	wipLimit: 15,
 	arrivalRateMs: 2000,
 	pushOrPull: "push",
 	defectProbability: 0.4,
@@ -233,7 +248,6 @@ export const STEP_PRESETS: Record<StepId, StepPreset> = {
 			...baseConfig,
 			batchSize: 1,
 			pushOrPull: "pull",
-			wipLimit: 5,
 			defectProbability: 0.05,
 			redBins: true,
 			stations: defaultStations.map((s) => ({

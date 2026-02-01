@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { getInitialConfig } from "../presets"
 import { createInitialState, tick } from "../tick"
-import { getWip } from "../metrics"
+import { getStationWip, getWip } from "../metrics"
 
 describe("tick invariants", () => {
 	const seed = 12345
@@ -15,10 +15,13 @@ describe("tick invariants", () => {
 		return state
 	}
 
-	it("WIP never exceeds wipLimit", () => {
+	it("each station WIP never exceeds that station's wipLimit", () => {
 		const state = runTicks(50)
-		const wip = getWip(state)
-		expect(wip).toBeLessThanOrEqual(config.wipLimit)
+		for (const sc of config.stations) {
+			const wip = getStationWip(state, sc.id)
+			const cap = sc.wipLimit ?? Number.POSITIVE_INFINITY
+			expect(wip).toBeLessThanOrEqual(cap)
+		}
 	})
 
 	it("buffer capacities are never exceeded", () => {
@@ -48,6 +51,10 @@ describe("tick invariants", () => {
 			for (const slot of st.inProcess) {
 				expect(seen.has(slot.itemId)).toBe(false)
 				seen.add(slot.itemId)
+			}
+			for (const id of st.batchBuffer) {
+				expect(seen.has(id)).toBe(false)
+				seen.add(id)
 			}
 			for (const id of st.outputQueue) {
 				expect(seen.has(id)).toBe(false)

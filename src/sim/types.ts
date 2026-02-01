@@ -20,6 +20,8 @@ export interface StationConfig {
 	bufferBefore: number
 	bufferAfter: number
 	defectProbability?: number
+	batchSize?: number
+	wipLimit?: number
 }
 
 export interface InProcessSlot {
@@ -31,6 +33,7 @@ export interface StationState {
 	stationId: string
 	inputQueue: string[]
 	inProcess: InProcessSlot[]
+	batchBuffer: string[]
 	outputQueue: string[]
 	defectCount: number
 }
@@ -39,7 +42,6 @@ export interface SimConfig {
 	tickMs: number
 	stations: StationConfig[]
 	batchSize: number
-	wipLimit: number
 	arrivalRateMs: number
 	pushOrPull: "push" | "pull"
 	defectProbability: number

@@ -4,13 +4,16 @@ import { useSimSnapshot, useSimStore } from "../SimProvider";
 import type { Item, StationState } from "../types";
 
 const STATION_WIDTH = 200;
-const STATION_HEIGHT = 80;
+const STATION_HEIGHT = 200;
 const PADDING = 24;
 const ITEM_W = 16;
 const ITEM_H = 12;
 const ITEM_STYLE = { transition: "x 180ms ease-out, y 180ms ease-out" };
 
-function itemColor(item: Item): string {
+const BATCH_BUFFER_PURPLE = "#a855f7";
+
+function itemColor(item: Item, inBatchBuffer: boolean): string {
+	if (inBatchBuffer) return BATCH_BUFFER_PURPLE;
 	if (item.status === "defective" || item.isDefective) return "#ef4444";
 	if (item.status === "done") return "#22c55e";
 	if (item.status === "working") return "#3b82f6";
@@ -46,6 +49,14 @@ function getItemPositions(
 			});
 		});
 
+		const batchBufferX = baseX + STATION_WIDTH - 52;
+		st.batchBuffer.forEach((itemId, i) => {
+			positions.set(itemId, {
+				x: batchBufferX - (i % 3) * (ITEM_W + 4),
+				y: baseY + 20 + Math.floor(i / 3) * (ITEM_H + 4),
+			});
+		});
+
 		const outputStartX = baseX + STATION_WIDTH - 8 - ITEM_W;
 		st.outputQueue.forEach((itemId, i) => {
 			positions.set(itemId, {
@@ -73,6 +84,7 @@ export function ProductionLineSvg() {
 	for (const st of state.stationStates.values()) {
 		for (const id of st.inputQueue) allItemIds.add(id);
 		for (const slot of st.inProcess) allItemIds.add(slot.itemId);
+		for (const id of st.batchBuffer) allItemIds.add(id);
 		for (const id of st.outputQueue) allItemIds.add(id);
 	}
 
@@ -145,7 +157,10 @@ export function ProductionLineSvg() {
 					const item = state.items.get(itemId);
 					const pos = positions.get(itemId);
 					if (!item || !pos) return null;
-					const fill = itemColor(item);
+					const inBatchBuffer = stationOrder.some((sid) =>
+						state.stationStates.get(sid)?.batchBuffer.includes(itemId),
+					);
+					const fill = itemColor(item, inBatchBuffer);
 					return (
 						<rect
 							key={itemId}
@@ -162,7 +177,10 @@ export function ProductionLineSvg() {
 					);
 				})}
 			</svg>
-			{(enabled.cycleTime || enabled.cycleVariance) && (
+			{(enabled.cycleTime ||
+				enabled.cycleVariance ||
+				enabled.batchSize ||
+				enabled.wipLimit) && (
 				<div
 					className="flex justify-between w-full gap-0 mt-3"
 					style={{ minWidth: width }}
@@ -170,9 +188,55 @@ export function ProductionLineSvg() {
 					{config.stations.map((station, i) => (
 						<div
 							key={station.id}
-							className="flex flex-col gap-2 px-1"
+							className="flex flex-col gap-2 px-1 flex-shrink-0"
 							style={{ width: STATION_WIDTH }}
 						>
+							{enabled.batchSize && (
+								<label className="flex flex-col gap-0.5 text-xs">
+									<span className="text-slate-400">Batch</span>
+									<input
+										type="range"
+										min={1}
+										max={10}
+										value={station.batchSize ?? config.batchSize}
+										onChange={(e) => {
+											const next = config.stations.map((s, j) =>
+												j === i
+													? { ...s, batchSize: Number(e.target.value) }
+													: s,
+											);
+											store.updateConfig({ stations: next });
+										}}
+										className="w-full accent-cyan-500"
+									/>
+									<span className="text-slate-500 tabular-nums">
+										{station.batchSize ?? config.batchSize}
+									</span>
+								</label>
+							)}
+							{enabled.wipLimit && (
+								<label className="flex flex-col gap-0.5 text-xs">
+									<span className="text-slate-400">WIP limit</span>
+									<input
+										type="range"
+										min={1}
+										max={30}
+										value={station.wipLimit ?? 10}
+										onChange={(e) => {
+											const next = config.stations.map((s, j) =>
+												j === i
+													? { ...s, wipLimit: Number(e.target.value) }
+													: s,
+											);
+											store.updateConfig({ stations: next });
+										}}
+										className="w-full accent-cyan-500"
+									/>
+									<span className="text-slate-500 tabular-nums">
+										{station.wipLimit ?? 10}
+									</span>
+								</label>
+							)}
 							{enabled.cycleTime && (
 								<label className="flex flex-col gap-0.5 text-xs">
 									<span className="text-slate-400">Cycle (ms)</span>

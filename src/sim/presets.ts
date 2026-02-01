@@ -1,11 +1,72 @@
-import type { SimConfig, StationConfig } from "./types"
-import type { StepId } from "./step-config"
+import type { StepId } from "./step-config";
+import type { SimConfig, StationConfig } from "./types";
 
 const defaultStations: StationConfig[] = [
-	{ id: "s1", cycleTime: 600, cycleVariance: 100, capacity: 1, bufferBefore: 5, bufferAfter: 5 },
-	{ id: "s2", cycleTime: 600, cycleVariance: 100, capacity: 1, bufferBefore: 5, bufferAfter: 5 },
-	{ id: "s3", cycleTime: 600, cycleVariance: 100, capacity: 1, bufferBefore: 5, bufferAfter: 5 },
-]
+	{
+		id: "s1",
+		cycleTime: 600,
+		cycleVariance: 100,
+		capacity: 1,
+		bufferBefore: 5,
+		bufferAfter: 5,
+	},
+	{
+		id: "s2",
+		cycleTime: 600,
+		cycleVariance: 100,
+		capacity: 1,
+		bufferBefore: 5,
+		bufferAfter: 5,
+	},
+	{
+		id: "s3",
+		cycleTime: 600,
+		cycleVariance: 100,
+		capacity: 1,
+		bufferBefore: 5,
+		bufferAfter: 5,
+	},
+	{
+		id: "s4",
+		cycleTime: 600,
+		cycleVariance: 100,
+		capacity: 1,
+		bufferBefore: 5,
+		bufferAfter: 5,
+	},
+	{
+		id: "s5",
+		cycleTime: 600,
+		cycleVariance: 100,
+		capacity: 1,
+		bufferBefore: 5,
+		bufferAfter: 5,
+	},
+	{
+		id: "s6",
+		cycleTime: 600,
+		cycleVariance: 100,
+		capacity: 1,
+		bufferBefore: 5,
+		bufferAfter: 5,
+	},
+	{
+		id: "s7",
+		cycleTime: 600,
+		cycleVariance: 100,
+		capacity: 1,
+		bufferBefore: 5,
+		bufferAfter: 5,
+	},
+	{
+		id: "s8",
+		cycleTime: 600,
+		cycleVariance: 100,
+		capacity: 1,
+		bufferBefore: 5,
+		bufferAfter: 5,
+	},
+];
 
 const baseConfig: Omit<SimConfig, "stepId" | "seed" | "stations"> = {
 	tickMs: 200,
@@ -22,20 +83,20 @@ const baseConfig: Omit<SimConfig, "stepId" | "seed" | "stations"> = {
 	laborCostPerTickPerEmployee: 1,
 	inventoryCostPerItemPerTick: 2,
 	defectCostPerItem: 50,
-}
+};
 
 export interface StepPreset {
-	config: Partial<SimConfig>
+	config: Partial<SimConfig>;
 	enabledControls: {
-		batchSize: boolean
-		pushPull: boolean
-		wipLimit: boolean
-		defectProbability: boolean
-		trainingEffectiveness: boolean
-		cycleVariance: boolean
-		cycleTime: boolean
-		tickSpeed: boolean
-	}
+		batchSize: boolean;
+		pushPull: boolean;
+		wipLimit: boolean;
+		defectProbability: boolean;
+		trainingEffectiveness: boolean;
+		cycleVariance: boolean;
+		cycleTime: boolean;
+		tickSpeed: boolean;
+	};
 }
 
 export const STEP_PRESETS: Record<StepId, StepPreset> = {
@@ -205,16 +266,16 @@ export const STEP_PRESETS: Record<StepId, StepPreset> = {
 			tickSpeed: true,
 		},
 	},
-}
+};
 
 export function getInitialConfig(stepId: StepId, seed: number): SimConfig {
-	const preset = STEP_PRESETS[stepId]
-	const stations = preset.config.stations ?? defaultStations
+	const preset = STEP_PRESETS[stepId];
+	const stations = preset.config.stations ?? defaultStations;
 	return {
 		...baseConfig,
 		...preset.config,
 		stations: stations.map((s) => ({ ...s })),
 		stepId,
 		seed,
-	}
+	};
 }

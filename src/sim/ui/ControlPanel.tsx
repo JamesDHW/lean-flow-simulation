@@ -148,50 +148,6 @@ export function ControlPanel() {
 						<span className="text-slate-400">{config.tickMs} ms</span>
 					</label>
 				)}
-				{enabled.cycleTime &&
-					config.stations.map((station, i) => (
-						<label key={station.id} className="flex flex-col gap-1 text-sm">
-							<span className="text-slate-300">Station {i + 1} cycle (ms)</span>
-							<input
-								type="range"
-								min={200}
-								max={1200}
-								step={50}
-								value={station.cycleTime}
-								onChange={(e) => {
-									const next = config.stations.map((s, j) =>
-										j === i ? { ...s, cycleTime: Number(e.target.value) } : s,
-									)
-									store.updateConfig({ stations: next })
-								}}
-								className="w-full accent-cyan-500"
-							/>
-							<span className="text-slate-400">{station.cycleTime} ms</span>
-						</label>
-					))}
-				{enabled.cycleVariance &&
-					config.stations.map((station, i) => (
-						<label key={station.id} className="flex flex-col gap-1 text-sm">
-							<span className="text-slate-300">Station {i + 1} variance</span>
-							<input
-								type="range"
-								min={0}
-								max={200}
-								step={10}
-								value={station.cycleVariance}
-								onChange={(e) => {
-									const next = config.stations.map((s, j) =>
-										j === i
-											? { ...s, cycleVariance: Number(e.target.value) }
-											: s,
-									)
-									store.updateConfig({ stations: next })
-								}}
-								className="w-full accent-cyan-500"
-							/>
-							<span className="text-slate-400">{station.cycleVariance}</span>
-						</label>
-					))}
 			</div>
 		</div>
 	)

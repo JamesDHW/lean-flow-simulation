@@ -1,15 +1,15 @@
 import { useSyncExternalStore } from "react"
 import type { StepId } from "./step-config"
-import { computeTickPl } from "./pl"
+import { computeCumulativePl, computeTickPl } from "./pl"
 import { getInitialConfig } from "./presets"
-import type { SimConfig, SimState, TickPl } from "./types"
+import type { CumulativePl, SimConfig, SimState, TickPl } from "./types"
 import { createInitialState, tick } from "./tick"
 
 export interface SimSnapshot {
 	state: SimState
 	config: SimConfig
 	tickPlHistory: TickPl[]
-	cumulativePl: { tick: number; cumulativeProfit: number }[]
+	cumulativePl: CumulativePl[]
 }
 
 export interface SimStore {
@@ -29,11 +29,7 @@ function computeSnapshot(
 	config: SimConfig,
 	tickPlHistory: TickPl[],
 ): SimSnapshot {
-	let cp = 0
-	const cumulativePl = tickPlHistory.map((row) => {
-		cp += row.profit
-		return { tick: row.tick, cumulativeProfit: cp }
-	})
+	const cumulativePl = computeCumulativePl(tickPlHistory)
 	return {
 		state,
 		config,

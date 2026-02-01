@@ -32,6 +32,7 @@ export interface StationState {
 	inputQueue: string[]
 	inProcess: InProcessSlot[]
 	outputQueue: string[]
+	defectCount: number
 }
 
 export interface SimConfig {

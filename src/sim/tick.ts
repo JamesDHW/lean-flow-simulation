@@ -1,5 +1,4 @@
 import * as R from "./random"
-import type { StepId } from "./step-config"
 import type {
 	InProcessSlot,
 	Item,
@@ -29,6 +28,7 @@ function cloneState(state: SimState): SimState {
 			inputQueue: [...st.inputQueue],
 			inProcess: st.inProcess.map((s) => ({ ...s })),
 			outputQueue: [...st.outputQueue],
+			defectCount: st.defectCount,
 		})
 	}
 	return {
@@ -49,6 +49,7 @@ function getStationState(state: SimState, stationId: string): StationState {
 		inputQueue: [],
 		inProcess: [],
 		outputQueue: [],
+		defectCount: 0,
 	}
 	state.stationStates.set(stationId, newSt)
 	return newSt
@@ -95,9 +96,28 @@ export function createInitialState(config: SimConfig): SimState {
 			inputQueue: [],
 			inProcess: [],
 			outputQueue: [],
+			defectCount: 0,
 		})
 	}
 	return state
+}
+
+function redBinPhase(state: SimState, config: SimConfig): void {
+	if (!config.redBins) return
+	const order = getStationOrder(config)
+	for (const stationId of order) {
+		const st = getStationState(state, stationId)
+		const remaining: string[] = []
+		for (const itemId of st.outputQueue) {
+			const item = state.items.get(itemId)
+			if (item?.isDefective === true) {
+				st.defectCount += 1
+				continue
+			}
+			remaining.push(itemId)
+		}
+		st.outputQueue = remaining
+	}
 }
 
 function processCompletions(state: SimState, config: SimConfig): void {
@@ -124,13 +144,14 @@ function processCompletions(state: SimState, config: SimConfig): void {
 			const [isDefective, rng2] = R.chance(rng, defectProb)
 			rng = rng2
 			if (isDefective) {
-				item.status = "defective"
 				item.isDefective = true
 				state.defectiveIds.push(item.id)
 				if (config.redBins) {
-					// red bin: item leaves system immediately, no rework
+					item.status = "waiting"
+					st.outputQueue.push(item.id)
+					continue
 				}
-				if (!config.redBins && config.reworkSendsBack) {
+				if (config.reworkSendsBack) {
 					const idx = order.indexOf(stationId)
 					if (idx > 0) {
 						const prevId = order[idx - 1]
@@ -170,6 +191,10 @@ function moveOutputToNext(state: SimState, config: SimConfig): void {
 		for (const itemId of st.outputQueue) {
 			const item = state.items.get(itemId)
 			if (!item) continue
+			if (item.isDefective && config.redBins) {
+				remaining.push(itemId)
+				continue
+			}
 			if (isLast) {
 				item.status = "done"
 				item.completedAtTick = state.tick
@@ -270,6 +295,7 @@ export function tick(state: SimState, config: SimConfig): SimState {
 	const next = cloneState(state)
 	next.tick = state.tick + 1
 
+	redBinPhase(next, config)
 	processCompletions(next, config)
 	moveOutputToNext(next, config)
 	startWork(next, config)

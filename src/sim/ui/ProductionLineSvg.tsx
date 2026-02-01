@@ -107,29 +107,32 @@ export function ProductionLineSvg() {
 							>
 								Station {i + 1}
 							</text>
-							{config.redBins && (
-								<g aria-label="Red bin">
-									<rect
-										x={x + STATION_WIDTH - 36}
-										y={y + STATION_HEIGHT - 28}
-										width={28}
-										height={24}
-										rx={2}
-										fill="#ef4444"
-										stroke="#b91c1c"
-										strokeWidth={1}
-									/>
-									<text
-										x={x + STATION_WIDTH - 22}
-										y={y + STATION_HEIGHT - 12}
-										textAnchor="middle"
-										fill="white"
-										fontSize={8}
-									>
-										bin
-									</text>
-								</g>
-							)}
+							{config.redBins && (() => {
+								const defectCount = state.stationStates.get(stationId)?.defectCount ?? 0
+								return (
+									<g aria-label={`Red bin: ${defectCount} defects`}>
+										<rect
+											x={x + STATION_WIDTH - 36}
+											y={y + STATION_HEIGHT - 28}
+											width={28}
+											height={24}
+											rx={2}
+											fill="#ef4444"
+											stroke="#b91c1c"
+											strokeWidth={1}
+										/>
+										<text
+											x={x + STATION_WIDTH - 22}
+											y={y + STATION_HEIGHT - 12}
+											textAnchor="middle"
+											fill="white"
+											fontSize={8}
+										>
+											{defectCount > 0 ? `bin (${defectCount})` : "bin"}
+										</text>
+									</g>
+								)
+							})()}
 						</g>
 					)
 				})}

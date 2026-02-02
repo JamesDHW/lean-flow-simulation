@@ -30,78 +30,89 @@ export function ProfitChart() {
 	const chartPanel = "rgb(61 54 50)";
 
 	return (
-		<div className="p-3 bg-factory-panel rounded-sm border-2 border-factory-border min-h-[180px] mb-48">
-			<div className="flex items-center justify-between mb-2">
-				<h3 className="text-base font-semibold text-text pixel-font text-sm">
+		<div className="h-full flex flex-col bg-factory-panel rounded-sm border-2 border-factory-border min-h-0">
+			<div className="flex items-center justify-between mb-2 shrink-0 px-2">
+				<h3 className="text-base font-semibold text-text pixel-font text-sm p-3">
 					Cumulative profit (starting capital: £
 					{config.initialInvestment.toLocaleString()})
 				</h3>
 				{state.isBust && (
 					<span className="px-2 py-1 text-sm font-bold bg-danger text-text rounded-sm border-2 border-danger-light animate-pulse pixel-font">
-						COMPANY BUST
+						COMPANY BUST IN ~
+						{(
+							(cumulativePl.length / TICKS_PER_HOUR) *
+							3.5 *
+							0.00136986
+						).toFixed(1)}{" "}
+						MONTHS
 					</span>
 				)}
 			</div>
 			{data.length > 0 ? (
-				<ResponsiveContainer width="100%" height={160}>
-					<LineChart
-						data={data}
-						margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
-					>
-						<CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
-						<XAxis
-							dataKey="hours"
-							type="number"
-							stroke={chartText}
-							fontSize={10}
-							tickFormatter={(v) => `${v}h`}
-						/>
-						<YAxis
-							stroke={chartText}
-							fontSize={10}
-							tickFormatter={(v) => `£${v}`}
-						/>
-						<Tooltip
-							contentStyle={{
-								backgroundColor: chartPanel,
-								border: `2px solid ${chartGrid}`,
-								borderRadius: 0,
-							}}
-							labelStyle={{ color: chartText }}
-							formatter={(value: number) => [`£${value.toFixed(0)}`, "Profit"]}
-							labelFormatter={(hours) => `Hour ${hours}`}
-						/>
-						{stepMarkers.map((m) => (
-							<ReferenceLine
-								key={`${m.stepId}-${m.tick}`}
-								x={m.tick / TICKS_PER_HOUR}
-								stroke={chartRust}
-								strokeDasharray="2 2"
+				<div className="flex-1 min-h-0">
+					<ResponsiveContainer width="100%" height="100%">
+						<LineChart
+							data={data}
+							margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+						>
+							<CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
+							<XAxis
+								dataKey="hours"
+								type="number"
+								stroke={chartText}
+								fontSize={10}
+								tickFormatter={(v) => `${v}h`}
 							/>
-						))}
-						<ReferenceLine
-							y={0}
-							stroke={chartDanger}
-							strokeWidth={2}
-							label={{
-								value: "BUST",
-								fill: chartDanger,
-								fontSize: 10,
-								position: "right",
-							}}
-						/>
-						<Line
-							type="monotone"
-							dataKey="profit"
-							stroke={chartAccent}
-							strokeWidth={2}
-							dot={false}
-							isAnimationActive={false}
-						/>
-					</LineChart>
-				</ResponsiveContainer>
+							<YAxis
+								stroke={chartText}
+								fontSize={10}
+								tickFormatter={(v) => `£${v}`}
+							/>
+							<Tooltip
+								contentStyle={{
+									backgroundColor: chartPanel,
+									border: `2px solid ${chartGrid}`,
+									borderRadius: 0,
+								}}
+								labelStyle={{ color: chartText }}
+								formatter={(value: number) => [
+									`£${value.toFixed(0)}`,
+									"Profit",
+								]}
+								labelFormatter={(hours) => `Hour ${hours}`}
+							/>
+							{stepMarkers.map((m) => (
+								<ReferenceLine
+									key={`${m.stepId}-${m.tick}`}
+									x={m.tick / TICKS_PER_HOUR}
+									stroke={chartRust}
+									strokeDasharray="2 2"
+								/>
+							))}
+							<ReferenceLine
+								y={0}
+								stroke={chartDanger}
+								strokeWidth={2}
+								label={{
+									value: "BUST",
+									fill: chartDanger,
+									fontSize: 10,
+									position: "right",
+								}}
+							/>
+							<Line
+								type="monotone"
+								dataKey="profit"
+								stroke={chartAccent}
+								strokeWidth={2}
+								dot={false}
+								isAnimationActive={false}
+							/>
+						</LineChart>
+					</ResponsiveContainer>
+				</div>
 			) : (
-				<div className="h-[160px] flex items-center justify-center text-factory-muted text-base">
+				<div className="flex-1 flex items-center justify-center text-factory-muted text-base min-h-[120px]">
 					Run simulation to see chart
 				</div>
 			)}

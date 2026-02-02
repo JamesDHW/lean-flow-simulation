@@ -34,7 +34,7 @@ function SimLayout() {
 	const routeStepId = getStepIdFromPath(pathname);
 	return (
 		<SimProvider key={routeStepId} initialStepId={routeStepId}>
-			<div className="min-h-screen bg-factory-bg text-text p-4 md:p-6">
+			<div className="min-h-screen bg-factory-bg text-text p-4 md:p-6 pb-56">
 				<div className="mx-auto max-w-full w-full space-y-4">
 					<StepNavigation />
 					<div className="p-4 rounded-sm border-2 border-factory-border bg-factory-panel/80">
@@ -44,11 +44,15 @@ function SimLayout() {
 					<section className="space-y-4">
 						<MetricsPanel />
 						<ProfitTable />
-						<ProfitChart />
 					</section>
 				</div>
-				<div className="fixed bottom-4 right-4 z-10 w-full max-w-sm shadow-[4px_4px_0_0_var(--color-factory-border)] border-2 border-factory-border">
-					<ControlPanel />
+				<div className="fixed bottom-0 left-0 right-0 z-10 flex min-h-[220px]">
+					<div className="flex-1 min-w-0 p-4 pr-2 flex flex-col">
+						<ProfitChart />
+					</div>
+					<div className="shrink-0 w-full max-w-sm p-4 pl-2">
+						<ControlPanel />
+					</div>
 				</div>
 			</div>
 		</SimProvider>

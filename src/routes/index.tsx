@@ -123,9 +123,16 @@ function HomePage() {
 			<h1 className="text-3xl md:text-4xl font-normal pixel-font text-text mb-4 text-center">
 				Lean Flow Simulation
 			</h1>
-			<p className="text-text-muted mb-8 max-w-md text-center text-xl">
-				Interactive simulation demonstrating Lean production principles: small
-				batches, pull vs push, WIP limits, bottlenecks, and one-piece flow.
+			<p className="text-text-muted mb-8 max-w-xl text-center text-xl">
+				Interactive simulation demonstrating Lean production principles: start
+				with <span className="font-bold text-accent">Customer Feedback</span>,{" "}
+				<span className="font-bold text-accent">Training</span>, and{" "}
+				<span className="font-bold text-accent">Andon</span>, then learn about{" "}
+				<span className="font-bold text-accent">Jidoka</span>,{" "}
+				<span className="font-bold text-accent">Flow</span>,{" "}
+				<span className="font-bold text-accent">Pull & Blue Bins</span>,{" "}
+				<span className="font-bold text-accent">Bottleneck & Takt</span>, and{" "}
+				<span className="font-bold text-accent">One-Piece Flow</span>.
 			</p>
 			<Link
 				to="/sim"

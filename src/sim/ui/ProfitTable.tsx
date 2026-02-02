@@ -8,7 +8,7 @@ export function ProfitTable() {
 	const lastCum = cumulativePl[cumulativePl.length - 1];
 
 	return (
-		<div className="p-3 bg-factory-panel rounded-sm border-2 border-factory-border">
+		<div className="p-3 bg-factory-panel rounded-sm border-2 border-factory-border mb-54">
 			<h3 className="text-base font-semibold text-text pixel-font text-sm mb-2">
 				Profit & Loss
 			</h3>

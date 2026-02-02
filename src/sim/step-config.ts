@@ -10,7 +10,7 @@ export const STEP_IDS = [
 	"step-8",
 ] as const;
 
-export type StepId = (typeof STEP_IDS)[number] | "config";
+export type StepId = (typeof STEP_IDS)[number];
 
 export const STEP_LABELS: Record<StepId, string> = {
 	intro: "Intro",
@@ -22,7 +22,6 @@ export const STEP_LABELS: Record<StepId, string> = {
 	"step-6": "6. Pull & Blue Bins",
 	"step-7": "7. Bottleneck & Takt",
 	"step-8": "8. One-Piece Flow",
-	config: "Playground",
 };
 
 export const STEP_PATH_INDEX: Record<StepId, string> = {
@@ -35,7 +34,6 @@ export const STEP_PATH_INDEX: Record<StepId, string> = {
 	"step-6": "step-6",
 	"step-7": "step-7",
 	"step-8": "step-8",
-	config: "config",
 };
 
 export function stepIdFromPath(pathSegment: string): StepId {

@@ -1,44 +1,31 @@
-import {
-	createFileRoute,
-	Outlet,
-	useRouterState,
-} from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { SimProvider } from "../sim/SimProvider";
-import { STEP_IDS, type StepId } from "../sim/step-config";
 import { ControlPanel } from "../sim/ui/ControlPanel";
 import { MetricsPanel } from "../sim/ui/MetricsPanel";
 import { ProductionLineSvg } from "../sim/ui/ProductionLineSvg";
 import { ProfitChart } from "../sim/ui/ProfitChart";
 import { ProfitTable } from "../sim/ui/ProfitTable";
-import { StepNavigation } from "../sim/ui/StepNavigation";
 
-function getStepIdFromPath(pathname: string): StepId {
-	const base = "/sim";
-	if (!pathname.startsWith(base)) return "intro";
-	const rest = pathname.slice(base.length).replace(/^\/+/, "") || "";
-	if (rest === "") return "intro";
-	const stepNum = rest.replace("step-", "");
-	if (/^[1-9]$/.test(stepNum)) {
-		const id = `step-${stepNum}` as StepId;
-		return STEP_IDS.includes(id) ? id : "intro";
-	}
-	return "intro";
-}
-
-export const Route = createFileRoute("/sim")({
-	component: SimLayout,
+export const Route = createFileRoute("/playground")({
+	component: PlaygroundPage,
 });
 
-function SimLayout() {
-	const pathname = useRouterState({ select: (s) => s.location.pathname });
-	const routeStepId = getStepIdFromPath(pathname);
+function PlaygroundPage() {
 	return (
-		<SimProvider key={routeStepId} initialStepId={routeStepId}>
+		<SimProvider initialStepId="config">
 			<div className="min-h-screen bg-factory-bg text-text p-4 md:p-6">
 				<div className="mx-auto max-w-full w-full space-y-4">
-					<StepNavigation />
 					<div className="p-4 rounded-sm border-2 border-factory-border bg-factory-panel/80">
-						<Outlet />
+						<div className="space-y-2">
+							<h2 className="text-xl font-semibold text-text pixel-font">
+								Playground
+							</h2>
+							<p className="text-text-muted text-base">
+								Configure all parameters: stations, cycle times, variance, batch
+								size, WIP limit, push/pull, defect rates. View P/L, costs, stock
+								levels, defects, and visualizations.
+							</p>
+						</div>
 					</div>
 					<ProductionLineSvg />
 					<section className="space-y-4">

@@ -1,141 +1,148 @@
-import { useSyncExternalStore } from "react"
-import type { StepId } from "./step-config"
-import { computeCumulativePl, computeTickPl } from "./pl"
-import { getInitialConfig } from "./presets"
-import type { CumulativePl, SimConfig, SimState, TickPl } from "./types"
-import { createInitialState, tick } from "./tick"
+import { useSyncExternalStore } from "react";
+import { computeCumulativePl, computeTickPl } from "./pl";
+import { getInitialConfig } from "./presets";
+import type { StepId } from "./step-config";
+import { createInitialState, tick } from "./tick";
+import type { CumulativePl, SimConfig, SimState, TickPl } from "./types";
 
 export interface SimSnapshot {
-	state: SimState
-	config: SimConfig
-	tickPlHistory: TickPl[]
-	cumulativePl: CumulativePl[]
+	state: SimState;
+	config: SimConfig;
+	tickPlHistory: TickPl[];
+	cumulativePl: CumulativePl[];
 }
 
 export interface SimStore {
-	getSnapshot(): SimSnapshot
-	subscribe(listener: () => void): () => void
-	start(): void
-	pause(): void
-	reset(): void
-	setStep(stepId: StepId): void
-	updateConfig(partial: Partial<SimConfig>): void
+	getSnapshot(): SimSnapshot;
+	subscribe(listener: () => void): () => void;
+	start(): void;
+	pause(): void;
+	reset(): void;
+	setStep(stepId: StepId): void;
+	updateConfig(partial: Partial<SimConfig>): void;
+	triggerMarketChange(): void;
 }
 
-const DEFAULT_SEED = 42
+const DEFAULT_SEED = 42;
 
 function computeSnapshot(
 	state: SimState,
 	config: SimConfig,
 	tickPlHistory: TickPl[],
 ): SimSnapshot {
-	const cumulativePl = computeCumulativePl(tickPlHistory)
+	const cumulativePl = computeCumulativePl(
+		tickPlHistory,
+		config.initialInvestment,
+	);
 	return {
 		state,
 		config,
 		tickPlHistory,
 		cumulativePl,
-	}
+	};
 }
 
 export function createSimStore(initialStepId: StepId = "intro"): SimStore {
 	let state: SimState = createInitialState(
 		getInitialConfig(initialStepId, DEFAULT_SEED),
-	)
-	let config: SimConfig = getInitialConfig(initialStepId, DEFAULT_SEED)
-	let tickPlHistory: TickPl[] = []
-	let lastCompletedCount = 0
-	let lastDefectCount = 0
+	);
+	let config: SimConfig = getInitialConfig(initialStepId, DEFAULT_SEED);
+	let tickPlHistory: TickPl[] = [];
+	let lastCompletedCount = 0;
+	let marketChangeRequested = false;
 
-	let cachedSnapshot: SimSnapshot | null = null
+	let cachedSnapshot: SimSnapshot | null = null;
 
-	let listeners: Set<() => void> = new Set()
-	let intervalId: ReturnType<typeof setInterval> | null = null
+	let listeners: Set<() => void> = new Set();
+	let intervalId: ReturnType<typeof setInterval> | null = null;
 
 	function invalidateSnapshot() {
-		cachedSnapshot = null
+		cachedSnapshot = null;
 	}
 
 	function emit() {
-		invalidateSnapshot()
-		for (const l of listeners) l()
+		invalidateSnapshot();
+		for (const l of listeners) l();
 	}
 
 	function runTick() {
-		const completedBefore = state.completedIds.length
-		const defectBefore = state.defectiveIds.length
-		state = tick(state, config)
-		const completedAfter = state.completedIds.length
-		const defectAfter = state.defectiveIds.length
-		const tickPl = computeTickPl(
-			state,
-			config,
-			completedBefore,
-			defectAfter - defectBefore,
-		)
-		tickPlHistory = [...tickPlHistory, tickPl]
-		lastCompletedCount = completedAfter
-		lastDefectCount = defectAfter
-		emit()
+		if (state.isBust) return;
+		const completedBefore = state.completedIds.length;
+		const result = tick(state, config, { marketChangeRequested });
+		marketChangeRequested = false;
+		state = result.state;
+		const tickPl = computeTickPl(state, config, completedBefore, result.events);
+		tickPlHistory = [...tickPlHistory, tickPl];
+		lastCompletedCount = state.completedIds.length;
+		const cumPl = computeCumulativePl(tickPlHistory, config.initialInvestment);
+		const lastCum = cumPl[cumPl.length - 1];
+		if (lastCum && lastCum.cumulativeProfit <= 0) {
+			state = { ...state, isBust: true };
+			pause();
+		}
+		emit();
+	}
+
+	function triggerMarketChange() {
+		marketChangeRequested = true;
+		emit();
 	}
 
 	function start() {
-		if (intervalId) return
-		intervalId = setInterval(runTick, config.tickMs)
-		state = { ...state, isRunning: true }
-		emit()
+		if (intervalId) return;
+		intervalId = setInterval(runTick, config.tickMs);
+		state = { ...state, isRunning: true };
+		emit();
 	}
 
 	function pause() {
 		if (intervalId) {
-			clearInterval(intervalId)
-			intervalId = null
+			clearInterval(intervalId);
+			intervalId = null;
 		}
-		state = { ...state, isRunning: false }
-		emit()
+		state = { ...state, isRunning: false };
+		emit();
 	}
 
 	function reset() {
-		pause()
-		state = createInitialState(config)
-		tickPlHistory = []
-		lastCompletedCount = 0
-		lastDefectCount = 0
-		emit()
+		pause();
+		state = createInitialState(config);
+		tickPlHistory = [];
+		lastCompletedCount = 0;
+		emit();
 	}
 
 	function setStep(stepId: StepId) {
-		pause()
-		config = getInitialConfig(stepId, config.seed)
-		config.stepId = stepId
-		state = createInitialState(config)
-		state.stepMarkers = [...state.stepMarkers, { stepId, tick: state.tick }]
-		tickPlHistory = []
-		lastCompletedCount = 0
-		lastDefectCount = 0
-		emit()
+		pause();
+		config = getInitialConfig(stepId, config.seed);
+		config.stepId = stepId;
+		state = createInitialState(config);
+		state.stepMarkers = [...state.stepMarkers, { stepId, tick: state.tick }];
+		tickPlHistory = [];
+		lastCompletedCount = 0;
+		emit();
 	}
 
 	function updateConfig(partial: Partial<SimConfig>) {
-		config = { ...config, ...partial }
+		config = { ...config, ...partial };
 		if (partial.stations != null) {
-			config.stations = partial.stations
+			config.stations = partial.stations;
 		}
-		emit()
+		emit();
 	}
 
 	function getSnapshot(): SimSnapshot {
 		if (cachedSnapshot === null) {
-			cachedSnapshot = computeSnapshot(state, config, tickPlHistory)
+			cachedSnapshot = computeSnapshot(state, config, tickPlHistory);
 		}
-		return cachedSnapshot
+		return cachedSnapshot;
 	}
 
 	function subscribe(listener: () => void): () => void {
-		listeners.add(listener)
+		listeners.add(listener);
 		return () => {
-			listeners.delete(listener)
-		}
+			listeners.delete(listener);
+		};
 	}
 
 	return {
@@ -146,13 +153,17 @@ export function createSimStore(initialStepId: StepId = "intro"): SimStore {
 		reset,
 		setStep,
 		updateConfig,
-	}
+		triggerMarketChange,
+	};
 }
 
-export function useSimStoreSnapshot<T>(store: SimStore, selector: (snap: SimSnapshot) => T): T {
+export function useSimStoreSnapshot<T>(
+	store: SimStore,
+	selector: (snap: SimSnapshot) => T,
+): T {
 	return useSyncExternalStore(
 		store.subscribe,
 		() => selector(store.getSnapshot()),
 		() => selector(store.getSnapshot()),
-	)
+	);
 }

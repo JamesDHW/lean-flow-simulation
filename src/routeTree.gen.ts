@@ -10,8 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SimRouteImport } from './routes/sim'
+import { Route as PlaygroundRouteImport } from './routes/playground'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SimIndexRouteImport } from './routes/sim/index'
+import { Route as SimStep8RouteImport } from './routes/sim/step-8'
 import { Route as SimStep7RouteImport } from './routes/sim/step-7'
 import { Route as SimStep6RouteImport } from './routes/sim/step-6'
 import { Route as SimStep5RouteImport } from './routes/sim/step-5'
@@ -19,11 +21,15 @@ import { Route as SimStep4RouteImport } from './routes/sim/step-4'
 import { Route as SimStep3RouteImport } from './routes/sim/step-3'
 import { Route as SimStep2RouteImport } from './routes/sim/step-2'
 import { Route as SimStep1RouteImport } from './routes/sim/step-1'
-import { Route as SimConfigRouteImport } from './routes/sim/config'
 
 const SimRoute = SimRouteImport.update({
   id: '/sim',
   path: '/sim',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlaygroundRoute = PlaygroundRouteImport.update({
+  id: '/playground',
+  path: '/playground',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -34,6 +40,11 @@ const IndexRoute = IndexRouteImport.update({
 const SimIndexRoute = SimIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => SimRoute,
+} as any)
+const SimStep8Route = SimStep8RouteImport.update({
+  id: '/step-8',
+  path: '/step-8',
   getParentRoute: () => SimRoute,
 } as any)
 const SimStep7Route = SimStep7RouteImport.update({
@@ -71,16 +82,11 @@ const SimStep1Route = SimStep1RouteImport.update({
   path: '/step-1',
   getParentRoute: () => SimRoute,
 } as any)
-const SimConfigRoute = SimConfigRouteImport.update({
-  id: '/config',
-  path: '/config',
-  getParentRoute: () => SimRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/playground': typeof PlaygroundRoute
   '/sim': typeof SimRouteWithChildren
-  '/sim/config': typeof SimConfigRoute
   '/sim/step-1': typeof SimStep1Route
   '/sim/step-2': typeof SimStep2Route
   '/sim/step-3': typeof SimStep3Route
@@ -88,11 +94,12 @@ export interface FileRoutesByFullPath {
   '/sim/step-5': typeof SimStep5Route
   '/sim/step-6': typeof SimStep6Route
   '/sim/step-7': typeof SimStep7Route
+  '/sim/step-8': typeof SimStep8Route
   '/sim/': typeof SimIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/sim/config': typeof SimConfigRoute
+  '/playground': typeof PlaygroundRoute
   '/sim/step-1': typeof SimStep1Route
   '/sim/step-2': typeof SimStep2Route
   '/sim/step-3': typeof SimStep3Route
@@ -100,13 +107,14 @@ export interface FileRoutesByTo {
   '/sim/step-5': typeof SimStep5Route
   '/sim/step-6': typeof SimStep6Route
   '/sim/step-7': typeof SimStep7Route
+  '/sim/step-8': typeof SimStep8Route
   '/sim': typeof SimIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/playground': typeof PlaygroundRoute
   '/sim': typeof SimRouteWithChildren
-  '/sim/config': typeof SimConfigRoute
   '/sim/step-1': typeof SimStep1Route
   '/sim/step-2': typeof SimStep2Route
   '/sim/step-3': typeof SimStep3Route
@@ -114,14 +122,15 @@ export interface FileRoutesById {
   '/sim/step-5': typeof SimStep5Route
   '/sim/step-6': typeof SimStep6Route
   '/sim/step-7': typeof SimStep7Route
+  '/sim/step-8': typeof SimStep8Route
   '/sim/': typeof SimIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/playground'
     | '/sim'
-    | '/sim/config'
     | '/sim/step-1'
     | '/sim/step-2'
     | '/sim/step-3'
@@ -129,11 +138,12 @@ export interface FileRouteTypes {
     | '/sim/step-5'
     | '/sim/step-6'
     | '/sim/step-7'
+    | '/sim/step-8'
     | '/sim/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/sim/config'
+    | '/playground'
     | '/sim/step-1'
     | '/sim/step-2'
     | '/sim/step-3'
@@ -141,12 +151,13 @@ export interface FileRouteTypes {
     | '/sim/step-5'
     | '/sim/step-6'
     | '/sim/step-7'
+    | '/sim/step-8'
     | '/sim'
   id:
     | '__root__'
     | '/'
+    | '/playground'
     | '/sim'
-    | '/sim/config'
     | '/sim/step-1'
     | '/sim/step-2'
     | '/sim/step-3'
@@ -154,11 +165,13 @@ export interface FileRouteTypes {
     | '/sim/step-5'
     | '/sim/step-6'
     | '/sim/step-7'
+    | '/sim/step-8'
     | '/sim/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  PlaygroundRoute: typeof PlaygroundRoute
   SimRoute: typeof SimRouteWithChildren
 }
 
@@ -169,6 +182,13 @@ declare module '@tanstack/react-router' {
       path: '/sim'
       fullPath: '/sim'
       preLoaderRoute: typeof SimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/playground': {
+      id: '/playground'
+      path: '/playground'
+      fullPath: '/playground'
+      preLoaderRoute: typeof PlaygroundRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -183,6 +203,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/sim/'
       preLoaderRoute: typeof SimIndexRouteImport
+      parentRoute: typeof SimRoute
+    }
+    '/sim/step-8': {
+      id: '/sim/step-8'
+      path: '/step-8'
+      fullPath: '/sim/step-8'
+      preLoaderRoute: typeof SimStep8RouteImport
       parentRoute: typeof SimRoute
     }
     '/sim/step-7': {
@@ -234,18 +261,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SimStep1RouteImport
       parentRoute: typeof SimRoute
     }
-    '/sim/config': {
-      id: '/sim/config'
-      path: '/config'
-      fullPath: '/sim/config'
-      preLoaderRoute: typeof SimConfigRouteImport
-      parentRoute: typeof SimRoute
-    }
   }
 }
 
 interface SimRouteChildren {
-  SimConfigRoute: typeof SimConfigRoute
   SimStep1Route: typeof SimStep1Route
   SimStep2Route: typeof SimStep2Route
   SimStep3Route: typeof SimStep3Route
@@ -253,11 +272,11 @@ interface SimRouteChildren {
   SimStep5Route: typeof SimStep5Route
   SimStep6Route: typeof SimStep6Route
   SimStep7Route: typeof SimStep7Route
+  SimStep8Route: typeof SimStep8Route
   SimIndexRoute: typeof SimIndexRoute
 }
 
 const SimRouteChildren: SimRouteChildren = {
-  SimConfigRoute: SimConfigRoute,
   SimStep1Route: SimStep1Route,
   SimStep2Route: SimStep2Route,
   SimStep3Route: SimStep3Route,
@@ -265,6 +284,7 @@ const SimRouteChildren: SimRouteChildren = {
   SimStep5Route: SimStep5Route,
   SimStep6Route: SimStep6Route,
   SimStep7Route: SimStep7Route,
+  SimStep8Route: SimStep8Route,
   SimIndexRoute: SimIndexRoute,
 }
 
@@ -272,6 +292,7 @@ const SimRouteWithChildren = SimRoute._addFileChildren(SimRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  PlaygroundRoute: PlaygroundRoute,
   SimRoute: SimRouteWithChildren,
 }
 export const routeTree = rootRouteImport

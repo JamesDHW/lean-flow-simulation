@@ -1,4 +1,4 @@
-import type { SimConfig, SimState } from "./types";
+import { getSimulationMsPerTick, type SimConfig, type SimState } from "./types";
 
 export function getWip(state: SimState): number {
 	let n = 0;
@@ -38,9 +38,10 @@ export function getLeadTimeAvg(state: SimState, config: SimConfig): number {
 				item != null && item.completedAtTick != null,
 		);
 	if (completed.length === 0) return 0;
+	const simMsPerTick = getSimulationMsPerTick(config);
 	const sum = completed.reduce(
 		(acc, item) =>
-			acc + ((item.completedAtTick ?? 0) - item.createdAtTick) * config.tickMs,
+			acc + ((item.completedAtTick ?? 0) - item.createdAtTick) * simMsPerTick,
 		0,
 	);
 	return sum / completed.length;

@@ -10,14 +10,22 @@ import {
 } from "recharts";
 import { useSimSnapshot } from "../SimProvider";
 
-const TICKS_PER_HOUR = 1;
+const HOURS_PER_MONTH = 730;
+
+function simulationHoursFromTicks(
+	tick: number,
+	simTicksPerSecond: number,
+): number {
+	return tick / (simTicksPerSecond * 3600);
+}
 
 export function ProfitChart() {
 	const cumulativePl = useSimSnapshot((s) => s.cumulativePl);
 	const state = useSimSnapshot((s) => s.state);
 	const config = useSimSnapshot((s) => s.config);
+	const { simTicksPerSecond } = config;
 	const data = cumulativePl.map((row) => ({
-		hours: row.tick / TICKS_PER_HOUR,
+		hours: simulationHoursFromTicks(row.tick, simTicksPerSecond),
 		profit: row.cumulativeProfit,
 	}));
 	const stepMarkers = state.stepMarkers.filter((m) => m.tick > 0);
@@ -40,9 +48,8 @@ export function ProfitChart() {
 					<span className="px-2 py-1 text-sm font-bold bg-danger text-text rounded-sm border-2 border-danger-light animate-pulse pixel-font">
 						COMPANY BUST IN ~
 						{(
-							(cumulativePl.length / TICKS_PER_HOUR) *
-							3.5 *
-							0.00136986
+							simulationHoursFromTicks(cumulativePl.length, simTicksPerSecond) *
+							HOURS_PER_MONTH
 						).toFixed(1)}{" "}
 						MONTHS
 					</span>
@@ -84,7 +91,7 @@ export function ProfitChart() {
 							{stepMarkers.map((m) => (
 								<ReferenceLine
 									key={`${m.stepId}-${m.tick}`}
-									x={m.tick / TICKS_PER_HOUR}
+									x={simulationHoursFromTicks(m.tick, simTicksPerSecond)}
 									stroke={chartRust}
 									strokeDasharray="2 2"
 								/>

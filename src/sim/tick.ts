@@ -1,19 +1,20 @@
 import * as R from "./random";
 import { STEP_IDS } from "./step-config";
-import type {
-	AgentState,
-	InProcessSlot,
-	Item,
-	SimConfig,
-	SimState,
-	StationConfig,
-	StationQuality,
-	StationState,
-	TickEvent,
-	TickInputs,
-	TickResult,
-	Transfer,
-	TransferPhase,
+import {
+	type AgentState,
+	getSimulationMsPerTick,
+	type InProcessSlot,
+	type Item,
+	type SimConfig,
+	type SimState,
+	type StationConfig,
+	type StationQuality,
+	type StationState,
+	type TickEvent,
+	type TickInputs,
+	type TickResult,
+	type Transfer,
+	type TransferPhase,
 } from "./types";
 
 function isJidokaStepOrLater(config: SimConfig): boolean {
@@ -56,10 +57,9 @@ function isStationPaused(state: SimState, stationId: string): boolean {
 }
 
 function isAgentAway(state: SimState, stationId: string): boolean {
-	for (const a of state.agents.values()) {
-		if (a.fromStationId === stationId && a.status === "walking") return true;
-	}
-	return false;
+	const agent = state.agents.get(`agent-${stationId}`);
+	if (!agent) return false;
+	return agent.status === "walking";
 }
 
 function cloneState(state: SimState): SimState {
@@ -213,7 +213,10 @@ function scheduleNextRandomMarketChange(
 ): void {
 	const ms = config.marketChangeAutoIntervalMs;
 	if (ms == null) return;
-	const baseTicks = Math.max(1, Math.round(ms / config.tickMs));
+	const baseTicks = Math.max(
+		1,
+		Math.round(ms / getSimulationMsPerTick(config)),
+	);
 	const minTicks = Math.round(0.7 * baseTicks);
 	const maxTicks = Math.round(1.3 * baseTicks);
 	const [delta, rng2] = R.nextInt(state.rngState, minTicks, maxTicks);
@@ -306,7 +309,7 @@ function sampleIndicesWithoutReplacement(
 	return [[...chosen], rng];
 }
 
-const RED_BIN_CATCH_PROB = 0.85;
+const RED_BIN_CATCH_PROB = 0.65;
 const JIDOKA_DISCOVERY_RATE = 0.95;
 
 function getDefectDiscoveryRate(config: SimConfig): number {
@@ -482,7 +485,7 @@ function advanceWorkAndComplete(
 ): void {
 	let rng = state.rngState;
 	const order = getStationOrder(config);
-	const tickMs = config.tickMs;
+	const tickMs = getSimulationMsPerTick(config);
 
 	for (let stationIndex = 0; stationIndex < order.length; stationIndex++) {
 		const stationId = order[stationIndex];
@@ -662,8 +665,100 @@ function moveOutputToNext(
 		}
 
 		const sendableCount = st.batchBuffer.length + forwardable.length;
+
+		if (isLast && sendableCount > 0) {
+			const takeFromBuffer = Math.min(sendableCount, st.batchBuffer.length);
+			const takeFromForwardable = sendableCount - takeFromBuffer;
+			const bufferPart = st.batchBuffer.splice(0, takeFromBuffer);
+			const forwardablePart = forwardable.splice(0, takeFromForwardable);
+			const batch = [...bufferPart, ...forwardablePart];
+			for (const itemId of batch) {
+				const item = state.items.get(itemId);
+				if (!item) continue;
+				if (item.isDefective && hasRedBinAtLast) {
+					st.defectCount += 1;
+					continue;
+				}
+				if (item.isDefective && !hasRedBinAtLast) {
+					state.defectiveIds.push(itemId);
+					state.lastDefectShippedTick = state.tick;
+					events.push({ type: "defectShippedToCustomer", itemId });
+					continue;
+				}
+				item.status = "done";
+				item.completedAtTick = state.tick;
+				state.completedIds.push(itemId);
+			}
+		}
+
+		if (
+			config.pushOrPull === "pull" &&
+			useTravel &&
+			nextSt != null &&
+			nextConfig != null &&
+			nextId != null &&
+			sendableCount > 0
+		) {
+			const downstreamNeedsWork = nextSt.inputQueue.length === 0;
+			const pullSpace = nextConfig.bufferBefore - nextSt.inputQueue.length;
+			const pullBatchSize = Math.min(sendableCount, pullSpace);
+			const wipSpace =
+				(nextConfig.wipLimit ?? Number.POSITIVE_INFINITY) -
+				getStationWip(state, nextId);
+			const agentFree = !isAgentAway(state, nextId);
+			const downstreamStationIdle = nextSt.inProcess.length === 0;
+			if (
+				downstreamNeedsWork &&
+				pullBatchSize > 0 &&
+				pullSpace > 0 &&
+				agentFree &&
+				downstreamStationIdle &&
+				wipSpace >= pullBatchSize
+			) {
+				createTransfer(state, config, stationId, nextId, [], pullBatchSize);
+			}
+		}
+
+		if (
+			config.pushOrPull === "pull" &&
+			!useTravel &&
+			nextSt != null &&
+			nextConfig != null &&
+			nextId != null &&
+			sendableCount > 0
+		) {
+			const downstreamNeedsWork = nextSt.inputQueue.length === 0;
+			const pullSpace = nextConfig.bufferBefore - nextSt.inputQueue.length;
+			const toMove = Math.min(sendableCount, pullSpace);
+			if (downstreamNeedsWork && toMove > 0 && pullSpace > 0) {
+				const takeFromBuffer = Math.min(toMove, st.batchBuffer.length);
+				const takeFromForwardable = toMove - takeFromBuffer;
+				const bufferPart = st.batchBuffer.splice(0, takeFromBuffer);
+				const forwardablePart = forwardable.splice(0, takeFromForwardable);
+				const batch = [...bufferPart, ...forwardablePart];
+				for (const itemId of batch) {
+					const item = state.items.get(itemId);
+					if (item) {
+						item.stationId = nextId;
+						item.defectFromMarketChange = false;
+					}
+					nextSt.inputQueue.push(itemId);
+				}
+			}
+		}
+
+		const pullAlreadyMoved =
+			config.pushOrPull === "pull" &&
+			!useTravel &&
+			nextSt != null &&
+			nextConfig != null &&
+			nextId != null &&
+			sendableCount > 0;
+		const lastAlreadyCompleted = isLast && sendableCount > 0;
 		if (
 			sendableCount >= batchSize &&
+			!pullAlreadyMoved &&
+			!lastAlreadyCompleted &&
 			(isLast || (nextSt && nextConfig && nextId))
 		) {
 			const takeFromBuffer = Math.min(batchSize, st.batchBuffer.length);
@@ -698,16 +793,21 @@ function moveOutputToNext(
 					config.pushOrPull === "pull"
 						? !isAgentAway(state, nextId)
 						: !isAgentAway(state, stationId);
+				const pullSpace = nextConfig.bufferBefore - nextSt.inputQueue.length;
+				const pullBatchSize =
+					config.pushOrPull === "pull"
+						? Math.min(batchSize, pullSpace)
+						: batchSize;
+				const sendingStationIdle = st.inProcess.length === 0;
 				const canSendBatch =
-					wipSpace >= batchSize &&
+					wipSpace >= pullBatchSize &&
 					(!useTravel || agentFree) &&
-					(config.pushOrPull !== "pull" ||
-						nextConfig.bufferBefore - nextSt.inputQueue.length >= batchSize);
+					(config.pushOrPull !== "pull" || pullSpace > 0) &&
+					(config.pushOrPull !== "push" || !useTravel || sendingStationIdle);
 				if (canSendBatch) {
 					if (useTravel && config.pushOrPull === "pull") {
 						st.batchBuffer.unshift(...bufferPart);
 						forwardable.unshift(...forwardablePart);
-						createTransfer(state, config, stationId, nextId, [], batchSize);
 					} else if (useTravel) {
 						createTransfer(state, config, stationId, nextId, batch);
 					} else {
@@ -834,7 +934,11 @@ function startWork(state: SimState, config: SimConfig): void {
 		if (config.pushOrPull === "pull" && !canStartDownstream(state, config, i))
 			continue;
 		const batchSize = stationConfig.batchSize ?? config.batchSize ?? 1;
-		if (st.batchBuffer.length >= batchSize) continue;
+		const outputBufferCap =
+			config.pushOrPull === "pull"
+				? (stationConfig.bufferAfter ?? batchSize)
+				: batchSize;
+		if (st.batchBuffer.length >= outputBufferCap) continue;
 		const capacity = stationConfig.capacity - st.inProcess.length;
 		if (capacity <= 0) continue;
 
@@ -877,7 +981,11 @@ function isFirstStationReadyToWork(
 	if (config.pushOrPull === "pull" && !canStartDownstream(state, config, 0))
 		return false;
 	const batchSize = firstConfig.batchSize ?? config.batchSize ?? 1;
-	if (firstSt.batchBuffer.length >= batchSize) return false;
+	const outputBufferCap =
+		config.pushOrPull === "pull"
+			? (firstConfig.bufferAfter ?? batchSize)
+			: batchSize;
+	if (firstSt.batchBuffer.length >= outputBufferCap) return false;
 	const capacity = firstConfig.capacity - firstSt.inProcess.length;
 	if (capacity <= 0) return false;
 	const space = firstConfig.bufferBefore - firstSt.inputQueue.length;

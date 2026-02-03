@@ -88,9 +88,13 @@ export function createSimStore(initialStepId: StepId = "intro"): SimStore {
 		emit();
 	}
 
+	function getTickIntervalMs(): number {
+		return 1000 / config.speed;
+	}
+
 	function start() {
 		if (intervalId) return;
-		intervalId = setInterval(runTick, config.tickMs);
+		intervalId = setInterval(runTick, getTickIntervalMs());
 		state = { ...state, isRunning: true };
 		emit();
 	}
@@ -127,6 +131,12 @@ export function createSimStore(initialStepId: StepId = "intro"): SimStore {
 		config = { ...config, ...partial };
 		if (partial.stations != null) {
 			config.stations = partial.stations;
+		}
+		const timingChanged =
+			partial.simTicksPerSecond != null || partial.speed != null;
+		if (timingChanged && state.isRunning && intervalId != null) {
+			clearInterval(intervalId);
+			intervalId = setInterval(runTick, getTickIntervalMs());
 		}
 		emit();
 	}

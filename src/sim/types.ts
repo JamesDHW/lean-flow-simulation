@@ -48,7 +48,8 @@ export interface StationState {
 export type LayoutMode = "departments" | "flow";
 
 export interface SimConfig {
-	tickMs: number;
+	simTicksPerSecond: number;
+	speed: number;
 	stations: StationConfig[];
 	batchSize: number;
 	arrivalRateMs: number;
@@ -78,6 +79,10 @@ export interface SimConfig {
 	initialInvestment: number;
 	managerReworkEnabled?: boolean;
 	managerReworkProbability?: number;
+}
+
+export function getSimulationMsPerTick(config: SimConfig): number {
+	return 1000 / config.simTicksPerSecond;
 }
 
 export interface StationQuality {

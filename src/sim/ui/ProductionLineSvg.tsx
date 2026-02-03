@@ -190,6 +190,7 @@ export function ProductionLineSvg() {
 	const stationOrder = config.stations.map((s) => s.id);
 	const departmentBoxes = getDepartmentBoxes(config);
 	const { width, height } = getLayoutBounds(config);
+	const tickIntervalMs = 1000 / config.speed;
 	const customerSad =
 		state.defectiveIds.length > 0 ||
 		(state.lastDefectShippedTick != null &&
@@ -435,12 +436,25 @@ export function ProductionLineSvg() {
 								ay = pos.y + STATION_AGENT_ROW_Y;
 							}
 							return (
-								<g key={agent.id} aria-label="Worker">
+								<g
+									key={agent.id}
+									aria-label="Worker"
+									style={{
+										transform: `translate(${ax}px, ${ay}px)`,
+										transition: `transform ${tickIntervalMs}ms linear`,
+									}}
+								>
 									<circle
-										cx={ax}
-										cy={ay}
+										cx={0}
+										cy={0}
 										r={10}
-										fill={jidokaActive ? "#ef4444" : "rgb(148 163 184)"}
+										fill={
+											jidokaActive
+												? "#ef4444"
+												: index % 2 === 0
+													? "#d35400"
+													: "#b87333"
+										}
 									/>
 								</g>
 							);
@@ -490,11 +504,17 @@ export function ProductionLineSvg() {
 								}
 							}
 							return (
-								<g aria-label="Manager">
-									<circle cx={mx} cy={my} r={12} fill="#eab308" />
+								<g
+									aria-label="Manager"
+									style={{
+										transform: `translate(${mx}px, ${my}px)`,
+										transition: `transform ${tickIntervalMs}ms linear`,
+									}}
+								>
+									<circle cx={0} cy={0} r={12} fill="#eab308" />
 									<text
-										x={mx}
-										y={my + 4}
+										x={0}
+										y={4}
 										textAnchor="middle"
 										fill="white"
 										fontSize={10}

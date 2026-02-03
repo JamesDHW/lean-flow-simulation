@@ -56,10 +56,10 @@ export function ControlPanel() {
 						<button
 							type="button"
 							onClick={handleMarketChange}
-							className={`flex items-center gap-2 px-3 py-2 rounded-sm border-2 text-text text-base font-medium transition-colors duration-150 ${
+							className={`flex items-center gap-2 px-3 py-2 rounded-sm border-2 text-base font-medium transition-colors duration-150 ${
 								marketChangeFlashing
-									? "bg-copper border-rust"
-									: "bg-rust hover:bg-rust-light border-rust-light"
+									? "bg-danger border-rust text-text"
+									: "border-accent-dim bg-[#00c853] hover:bg-[#008f3a] text-factory-bg text-base font-medium text-black"
 							}`}
 						>
 							Market Change
@@ -105,7 +105,7 @@ export function ControlPanel() {
 				{enabled.trainingEffectiveness && (
 					<label className="flex flex-col gap-1 text-base">
 						<span className="text-text-muted">
-							Training effectiveness (0–100%)
+							Training effectiveness (0-100%)
 						</span>
 						<input
 							type="range"
@@ -126,19 +126,19 @@ export function ControlPanel() {
 				)}
 				{enabled.tickSpeed && (
 					<label className="flex flex-col gap-1 text-base">
-						<span className="text-text-muted">Tick speed (ms)</span>
+						<span className="text-text-muted">Speed (ticks/sec)</span>
 						<input
 							type="range"
-							min={100}
-							max={500}
-							step={50}
-							value={config.tickMs}
+							min={1}
+							max={20}
+							step={1}
+							value={config.speed}
 							onChange={(e) =>
-								store.updateConfig({ tickMs: Number(e.target.value) })
+								store.updateConfig({ speed: Number(e.target.value) })
 							}
 							className="w-full accent-rust"
 						/>
-						<span className="text-factory-muted">{config.tickMs} ms</span>
+						<span className="text-factory-muted">{config.speed} /s</span>
 					</label>
 				)}
 			</div>

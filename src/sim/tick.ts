@@ -318,6 +318,109 @@ function getDefectDiscoveryRate(config: SimConfig): number {
 		: RED_BIN_CATCH_PROB;
 }
 
+function triggerJidokaAtStation(
+	state: SimState,
+	config: SimConfig,
+	stationId: string,
+): void {
+	if (!config.jidokaLineStop || !isJidokaStepOrLater(config)) return;
+	if (state.jidokaUntilTick != null && state.tick < state.jidokaUntilTick)
+		return;
+	const stationConfig = getStationConfig(config, stationId);
+	const baseDefectProb =
+		(stationConfig?.defectProbability ??
+			config.defectProbability * config.trainingEffectiveness) ||
+		0.01;
+	const q = state.stationQuality.get(stationId);
+	const currentP = baseDefectProb * (q?.defectMultiplier ?? 1);
+	const newP = Math.max(0.01, 0.5 * currentP);
+	state.jidokaUntilTick = state.tick + config.andonPauseTicks;
+	state.jidokaStationId = stationId;
+	for (const sq of state.stationQuality.values()) {
+		sq.pauseUntilTick = state.tick + config.andonPauseTicks;
+	}
+	if (q) {
+		q.defectMultiplier = newP / baseDefectProb;
+	}
+	const order = getStationOrder(config);
+	const firstId = order[0] ?? null;
+	state.managerFromStationId =
+		state.managerToStationId ?? state.managerFromStationId ?? firstId;
+	state.managerToStationId = stationId;
+	state.managerArrivesAtTick = state.tick + 1;
+}
+
+function isItemDefective(item: Item | undefined): boolean {
+	return item?.status === "defective" || item?.isDefective === true;
+}
+
+function moveStationDefectsToRedBin(
+	state: SimState,
+	config: SimConfig,
+	stationId: string,
+): void {
+	if (!config.redBins) return;
+	const st = getStationState(state, stationId);
+	const order = getStationOrder(config);
+	const i = order.indexOf(stationId);
+	if (!hasRedBinAtStation(config, stationId, i)) return;
+
+	const andonItemId = st.andonHoldItemId;
+	if (andonItemId) {
+		const item = state.items.get(andonItemId);
+		if (isItemDefective(item)) {
+			st.defectCount += 1;
+		}
+		st.andonHoldItemId = null;
+		const q = state.stationQuality.get(stationId);
+		if (q) q.pauseUntilTick = undefined;
+	}
+
+	const remainingInput: string[] = [];
+	for (const itemId of st.inputQueue) {
+		const item = state.items.get(itemId);
+		if (isItemDefective(item)) {
+			st.defectCount += 1;
+			continue;
+		}
+		remainingInput.push(itemId);
+	}
+	st.inputQueue = remainingInput;
+
+	const stillInProcess: InProcessSlot[] = [];
+	for (const slot of st.inProcess) {
+		const item = state.items.get(slot.itemId);
+		if (isItemDefective(item)) {
+			st.defectCount += 1;
+			continue;
+		}
+		stillInProcess.push(slot);
+	}
+	st.inProcess = stillInProcess;
+
+	const remainingBuffer: string[] = [];
+	for (const itemId of st.batchBuffer) {
+		const item = state.items.get(itemId);
+		if (isItemDefective(item)) {
+			st.defectCount += 1;
+			continue;
+		}
+		remainingBuffer.push(itemId);
+	}
+	st.batchBuffer = remainingBuffer;
+
+	const remainingOutput: string[] = [];
+	for (const itemId of st.outputQueue) {
+		const item = state.items.get(itemId);
+		if (isItemDefective(item)) {
+			st.defectCount += 1;
+			continue;
+		}
+		remainingOutput.push(itemId);
+	}
+	st.outputQueue = remainingOutput;
+}
+
 function handleQualityGates(
 	state: SimState,
 	config: SimConfig,
@@ -341,8 +444,9 @@ function handleQualityGates(
 			const [caught, rng2] = R.chance(state.rngState, catchProb);
 			state.rngState = rng2;
 			if (caught) {
-				st.defectCount += 1;
+				triggerJidokaAtStation(state, config, stationId);
 				events.push({ type: "defectCaught", stationId, itemId });
+				remainingOutput.push(itemId);
 				continue;
 			}
 			remainingOutput.push(itemId);
@@ -359,8 +463,9 @@ function handleQualityGates(
 			const [caught, rng2] = R.chance(state.rngState, catchProb);
 			state.rngState = rng2;
 			if (caught) {
-				st.defectCount += 1;
+				triggerJidokaAtStation(state, config, stationId);
 				events.push({ type: "defectCaught", stationId, itemId });
+				remainingBuffer.push(itemId);
 				continue;
 			}
 			remainingBuffer.push(itemId);
@@ -492,8 +597,6 @@ function advanceWorkAndComplete(
 		const st = getStationState(state, stationId);
 		const stationConfig = getStationConfig(config, stationId);
 		if (!stationConfig) continue;
-		if (isStationPaused(state, stationId)) continue;
-		if (st.andonHoldItemId) continue;
 
 		const quality = state.stationQuality.get(stationId);
 		const defectMultiplier = quality?.defectMultiplier ?? 1;
@@ -542,17 +645,15 @@ function advanceWorkAndComplete(
 				if (andonOn) {
 					const q = state.stationQuality.get(stationId)!;
 					q.lastAndonTick = state.tick;
-					const floor = 0.02 / baseDefectProb;
-					q.defectMultiplier = isJidokaStepOrLater(config)
-						? Math.max(floor, (q.defectMultiplier ?? 1) * 0.95)
-						: Math.max(0.1, (q.defectMultiplier ?? 1) * 0.95);
+					if (!config.jidokaLineStop) {
+						const floor = 0.02 / baseDefectProb;
+						q.defectMultiplier = isJidokaStepOrLater(config)
+							? Math.max(floor, (q.defectMultiplier ?? 1) * 0.95)
+							: Math.max(0.1, (q.defectMultiplier ?? 1) * 0.95);
+					}
 					events.push({ type: "andonTriggered", stationId, itemId: item.id });
 					if (config.jidokaLineStop) {
-						state.jidokaUntilTick = state.tick + config.andonPauseTicks;
-						state.jidokaStationId = stationId;
-						for (const sq of state.stationQuality.values()) {
-							sq.pauseUntilTick = state.tick + config.andonPauseTicks;
-						}
+						triggerJidokaAtStation(state, config, stationId);
 					}
 					q.pauseUntilTick = state.tick + config.andonPauseTicks;
 				}
@@ -643,7 +744,8 @@ function moveOutputToNext(
 			}
 			if (isLast) {
 				if (item.isDefective && hasRedBinAtLast) {
-					st.defectCount += 1;
+					triggerJidokaAtStation(state, config, stationId);
+					remaining.push(itemId);
 					continue;
 				}
 				if (item.isDefective && !hasRedBinAtLast) {
@@ -676,7 +778,8 @@ function moveOutputToNext(
 				const item = state.items.get(itemId);
 				if (!item) continue;
 				if (item.isDefective && hasRedBinAtLast) {
-					st.defectCount += 1;
+					triggerJidokaAtStation(state, config, stationId);
+					remaining.push(itemId);
 					continue;
 				}
 				if (item.isDefective && !hasRedBinAtLast) {
@@ -772,7 +875,8 @@ function moveOutputToNext(
 					const item = state.items.get(itemId);
 					if (!item) continue;
 					if (item.isDefective && hasRedBinAtLast) {
-						st.defectCount += 1;
+						triggerJidokaAtStation(state, config, stationId);
+						remaining.push(itemId);
 						continue;
 					}
 					if (item.isDefective && !hasRedBinAtLast) {
@@ -1042,14 +1146,14 @@ function processManager(
 					item.isDefective = false;
 					st.batchBuffer.push(itemId);
 					events.push({ type: "managerReverted", stationId, itemId });
+					st.andonHoldItemId = null;
+					const q = state.stationQuality.get(stationId);
+					if (q) q.pauseUntilTick = undefined;
 				} else {
-					st.defectCount += 1;
+					triggerJidokaAtStation(state, config, stationId);
 					events.push({ type: "managerRejected", stationId, itemId });
 				}
 			}
-			st.andonHoldItemId = null;
-			const q = state.stationQuality.get(stationId);
-			if (q) q.pauseUntilTick = undefined;
 		}
 		state.managerFromStationId = stationId;
 		state.managerToStationId = null;
@@ -1069,8 +1173,23 @@ function processManager(
 function handleJidokaState(state: SimState, config: SimConfig): void {
 	if (state.jidokaUntilTick == null) return;
 	if (state.tick >= state.jidokaUntilTick) {
+		const stationId = state.jidokaStationId;
 		state.jidokaUntilTick = undefined;
 		state.jidokaStationId = undefined;
+		if (stationId != null) {
+			moveStationDefectsToRedBin(state, config, stationId);
+		}
+		for (const sq of state.stationQuality.values()) {
+			sq.pauseUntilTick = undefined;
+		}
+		for (const agent of state.agents.values()) {
+			const homeStationId = agent.id.replace(/^agent-/, "");
+			agent.fromStationId = homeStationId;
+			agent.toStationId = homeStationId;
+			agent.progress01 = 1;
+			agent.status = "idle";
+			agent.carryingTransferId = null;
+		}
 		return;
 	}
 	if (state.jidokaStationId == null) return;

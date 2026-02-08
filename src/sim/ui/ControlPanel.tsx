@@ -46,7 +46,7 @@ export function ControlPanel() {
 					)}
 					<button
 						type="button"
-						onClick={() => store.reset()}
+						onClick={() => window.location.reload()}
 						className="flex items-center gap-2 px-3 py-2 rounded-sm border-2 border-factory-border bg-factory-surface hover:bg-factory-muted text-text text-base font-medium"
 					>
 						<RotateCcw size={16} />

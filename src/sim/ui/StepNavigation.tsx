@@ -1,4 +1,3 @@
-import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
 	getNextStepId,
@@ -34,7 +33,8 @@ function currentStepIdFromPath(pathname: string): NavStepId {
 }
 
 export function StepNavigation() {
-	const pathname = useRouterState({ select: (s) => s.location.pathname });
+	const pathname =
+		typeof window !== "undefined" ? window.location.pathname : "/sim";
 	const currentStepId = currentStepIdFromPath(pathname);
 	const prevId = getPrevStepId(currentStepId);
 	const nextId = getNextStepId(currentStepId);
@@ -43,13 +43,13 @@ export function StepNavigation() {
 		<nav className="flex items-center justify-between gap-4 p-3 bg-factory-panel rounded-sm border-2 border-factory-border">
 			<div className="flex items-center gap-2">
 				{prevId ? (
-					<Link
-						to={STEP_TO[prevId]}
+					<a
+						href={STEP_TO[prevId]}
 						className="flex items-center gap-1 px-3 py-2 rounded-sm border-2 border-factory-border bg-factory-surface hover:bg-factory-muted text-text text-base font-medium"
 					>
 						<ChevronLeft size={18} />
 						Previous
-					</Link>
+					</a>
 				) : (
 					<span className="flex items-center gap-1 px-3 py-2 text-factory-muted text-base border-2 border-transparent">
 						<ChevronLeft size={18} />
@@ -64,9 +64,9 @@ export function StepNavigation() {
 						const isActive = id === currentStepId;
 						const label = STEP_LABELS[id].replace(/^\d\.\s/, "");
 						return (
-							<Link
+							<a
 								key={id}
-								to={to}
+								href={to}
 								aria-current={isActive ? "page" : undefined}
 								title={label}
 								className={`min-w-0 px-2 py-1.5 rounded-sm border-2 text-lg font-medium text-center truncate transition-colors ${
@@ -76,20 +76,20 @@ export function StepNavigation() {
 								}`}
 							>
 								{label}
-							</Link>
+							</a>
 						);
 					})}
 				</div>
 			</div>
 			<div className="flex items-center gap-2">
 				{nextId ? (
-					<Link
-						to={STEP_TO[nextId]}
+					<a
+						href={STEP_TO[nextId]}
 						className="flex items-center gap-1 px-3 py-2 rounded-sm border-2 border-factory-border bg-factory-surface hover:bg-factory-muted text-text text-base font-medium"
 					>
 						Next
 						<ChevronRight size={18} />
-					</Link>
+					</a>
 				) : (
 					<span className="flex items-center gap-1 px-3 py-2 text-factory-muted text-base border-2 border-transparent">
 						Next

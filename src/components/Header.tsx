@@ -1,9 +1,19 @@
-import { Link } from "@tanstack/react-router";
 import { Home, Menu, PlayCircle, SquarePen, X } from "lucide-react";
 import { useState } from "react";
 
+const navLinkClass =
+	"flex items-center gap-3 p-3 rounded-sm border-2 border-transparent hover:border-factory-border hover:bg-factory-surface transition-colors mb-2";
+const navLinkActiveClass =
+	"flex items-center gap-3 p-3 rounded-sm bg-accent border-2 border-accent-dim text-factory-bg mb-2";
+const navLinkHomeActiveClass =
+	"flex items-center gap-3 p-3 rounded-sm bg-rust border-2 border-rust-light text-text mb-2";
+
 export default function Header() {
 	const [isOpen, setIsOpen] = useState(false);
+	const pathname = typeof window !== "undefined" ? window.location.pathname : "/";
+	const isHome = pathname === "/";
+	const isSim = pathname.startsWith("/sim") && pathname !== "/playground";
+	const isPlayground = pathname === "/playground";
 
 	return (
 		<>
@@ -17,9 +27,9 @@ export default function Header() {
 					<Menu size={24} />
 				</button>
 				<h1 className="ml-4 text-xl font-normal pixel-font tracking-tight">
-					<Link to="/" className="text-text hover:text-accent">
+					<a href="/" className="text-text hover:text-accent">
 						Lean Flow Simulation
-					</Link>
+					</a>
 				</h1>
 			</header>
 
@@ -41,44 +51,32 @@ export default function Header() {
 				</div>
 
 				<nav className="flex-1 p-4 overflow-y-auto">
-					<Link
-						to="/"
+					<a
+						href="/"
 						onClick={() => setIsOpen(false)}
-						className="flex items-center gap-3 p-3 rounded-sm border-2 border-transparent hover:border-factory-border hover:bg-factory-surface transition-colors mb-2"
-						activeProps={{
-							className:
-								"flex items-center gap-3 p-3 rounded-sm bg-rust border-2 border-rust-light text-text mb-2",
-						}}
+						className={isHome ? navLinkHomeActiveClass : navLinkClass}
 					>
 						<Home size={20} />
 						<span className="font-medium">Home</span>
-					</Link>
+					</a>
 
-					<Link
-						to="/sim"
+					<a
+						href="/sim"
 						onClick={() => setIsOpen(false)}
-						className="flex items-center gap-3 p-3 rounded-sm border-2 border-transparent hover:border-factory-border hover:bg-factory-surface transition-colors mb-2"
-						activeProps={{
-							className:
-								"flex items-center gap-3 p-3 rounded-sm bg-accent border-2 border-accent-dim text-factory-bg mb-2",
-						}}
+						className={isSim ? navLinkActiveClass : navLinkClass}
 					>
 						<PlayCircle size={20} />
 						<span className="font-medium">Lean Flow Sim</span>
-					</Link>
+					</a>
 
-					<Link
-						to="/playground"
+					<a
+						href="/playground"
 						onClick={() => setIsOpen(false)}
-						className="flex items-center gap-3 p-3 rounded-sm border-2 border-transparent hover:border-factory-border hover:bg-factory-surface transition-colors mb-2"
-						activeProps={{
-							className:
-								"flex items-center gap-3 p-3 rounded-sm bg-accent border-2 border-accent-dim text-factory-bg mb-2",
-						}}
+						className={isPlayground ? navLinkActiveClass : navLinkClass}
 					>
 						<SquarePen size={20} />
 						<span className="font-medium">Playground</span>
-					</Link>
+					</a>
 				</nav>
 			</aside>
 		</>

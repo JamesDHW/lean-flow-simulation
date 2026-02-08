@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { MobileViewMessage } from "../components/MobileViewMessage";
 import { SimProvider } from "../sim/SimProvider";
 import { ControlPanel } from "../sim/ui/ControlPanel";
 import { MetricsPanel } from "../sim/ui/MetricsPanel";
@@ -13,7 +14,8 @@ export const Route = createFileRoute("/playground")({
 function PlaygroundPage() {
 	return (
 		<SimProvider key="playground" initialStepId="playground">
-			<div className="min-h-screen bg-factory-bg text-text p-4 md:p-6">
+			<MobileViewMessage>
+				<div className="min-h-screen bg-factory-bg text-text p-4 md:p-6">
 				<div className="mx-auto max-w-full w-full space-y-4">
 					<div className="p-4 rounded-sm border-2 border-factory-border bg-factory-panel/80">
 						<div className="space-y-2">
@@ -38,6 +40,7 @@ function PlaygroundPage() {
 					<ControlPanel />
 				</div>
 			</div>
+			</MobileViewMessage>
 		</SimProvider>
 	);
 }

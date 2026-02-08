@@ -3,6 +3,7 @@ import {
 	Outlet,
 	useRouterState,
 } from "@tanstack/react-router";
+import { MobileViewMessage } from "../components/MobileViewMessage";
 import { SimProvider } from "../sim/SimProvider";
 import { STEP_IDS, type StepId } from "../sim/step-config";
 import { ControlPanel } from "../sim/ui/ControlPanel";
@@ -34,7 +35,8 @@ function SimLayout() {
 	const routeStepId = getStepIdFromPath(pathname);
 	return (
 		<SimProvider key={routeStepId} initialStepId={routeStepId}>
-			<div className="min-h-screen bg-factory-bg text-text p-4 md:p-6 pb-56">
+			<MobileViewMessage>
+				<div className="min-h-screen bg-factory-bg text-text p-4 md:p-6 pb-56">
 				<div className="mx-auto max-w-full w-full space-y-4">
 					<StepNavigation />
 					<div className="p-4 rounded-sm border-2 border-factory-border bg-factory-panel/80">
@@ -55,6 +57,7 @@ function SimLayout() {
 					</div>
 				</div>
 			</div>
+			</MobileViewMessage>
 		</SimProvider>
 	);
 }

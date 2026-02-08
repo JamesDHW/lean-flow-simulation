@@ -140,6 +140,7 @@ export interface SimState {
 	jidokaUntilTick?: number;
 	jidokaStationId?: string;
 	isBust: boolean;
+	endedAt24Months: boolean;
 	pendingAndonStationIds: string[];
 	managerFromStationId: string | null;
 	managerToStationId: string | null;

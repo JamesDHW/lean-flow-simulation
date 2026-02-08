@@ -3,6 +3,7 @@ import { addTickPlToCumulative, computeTickPl } from "./pl";
 import { getInitialConfig } from "./presets";
 import type { ConfigStepId, StepId } from "./step-config";
 import { createInitialState, tick } from "./tick";
+import { getTickForDisplayMonths } from "./time";
 import type { CumulativePl, Item, SimConfig, SimState, TickPl } from "./types";
 
 const MAX_CHART_POINTS = 1000;
@@ -26,6 +27,7 @@ export interface SimStore {
 }
 
 const MAX_STATE_IDS = 15_000;
+export const SIM_MONTHS_CAP = 36;
 
 function downsampleCumulativePl(arr: CumulativePl[]): CumulativePl[] {
 	if (arr.length <= MAX_CHART_POINTS) return arr;
@@ -92,9 +94,7 @@ function computeSnapshot(
 export function createSimStore(
 	initialStepId: ConfigStepId = "intro",
 ): SimStore {
-	let state: SimState = createInitialState(
-		getInitialConfig(initialStepId),
-	);
+	let state: SimState = createInitialState(getInitialConfig(initialStepId));
 	let config: SimConfig = getInitialConfig(initialStepId);
 	let tickPlHistory: TickPl[] = [];
 	let cumulativePlChart: CumulativePl[] = [];
@@ -116,33 +116,23 @@ export function createSimStore(
 	}
 
 	function runTick() {
-		if (state.isBust) return;
+		if (state.isBust || state.endedAt24Months) return;
+		const maxTick = getTickForDisplayMonths(
+			SIM_MONTHS_CAP,
+			config.simTicksPerSecond,
+		);
+		if (state.tick >= maxTick) {
+			state = { ...state, endedAt24Months: true };
+			pause();
+			emit();
+			return;
+		}
 		const completedBefore = state.completedIds.length;
+		state = getDisplayState(state);
 		const result = tick(state, config, { marketChangeRequested });
 		marketChangeRequested = false;
 		state = result.state;
 		state = getDisplayState(state);
-		// #region agent log
-		if (state.tick % 500 === 0) {
-			fetch("http://127.0.0.1:7242/ingest/55b8690a-6606-448b-a0c2-fdfbe6d215f9", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					location: "store.ts:runTick",
-					message: "sim state sizes",
-					data: {
-						tick: state.tick,
-						completedIdsLen: state.completedIds.length,
-						defectiveIdsLen: state.defectiveIds.length,
-						itemsSize: state.items.size,
-						stepMarkersLen: state.stepMarkers.length,
-					},
-					timestamp: Date.now(),
-					hypothesisId: "H1-H5",
-				}),
-			}).catch(() => {});
-		}
-		// #endregion
 		const tickPl = computeTickPl(state, config, completedBefore, result.events);
 		tickPlHistory = [tickPl];
 		const nextCumulative = addTickPlToCumulative(
@@ -150,6 +140,10 @@ export function createSimStore(
 			tickPl,
 			config.initialInvestment,
 		);
+		if (state.tick >= maxTick) {
+			state = { ...state, endedAt24Months: true };
+			pause();
+		}
 		if (nextCumulative.cumulativeProfit <= 0) {
 			state = { ...state, isBust: true };
 			pause();

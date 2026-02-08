@@ -157,7 +157,7 @@ const baseConfig: Omit<SimConfig, "stepId" | "stations"> = {
 	speed: 10,
 	pushOrPull: "push",
 	layoutMode: "departments",
-	revenuePerItem: 15000,
+	revenuePerItem: 20000,
 	laborCostPerTickPerEmployee: 15,
 	inventoryCostPerItemPerTick: 2,
 	materialCostPerItem: 500,

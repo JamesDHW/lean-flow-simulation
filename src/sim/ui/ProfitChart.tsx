@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
 	CartesianGrid,
 	Line,
@@ -9,24 +10,11 @@ import {
 	YAxis,
 } from "recharts";
 import { useSimSnapshot } from "../SimProvider";
+import { SIM_MONTHS_CAP } from "../store";
+import { displayHoursFromTicks, HOURS_PER_MONTH } from "../time";
 
-const HOURS_PER_MONTH = 730;
+const CHART_UPDATE_EVERY_N_TICKS = 20;
 const MAX_CHART_POINTS = 1000;
-const DISPLAY_TIME_SCALE = 100000;
-
-function simulationHoursFromTicks(
-	tick: number,
-	simTicksPerSecond: number,
-): number {
-	return tick / (simTicksPerSecond * 3600);
-}
-
-function displayHoursFromTicks(
-	tick: number,
-	simTicksPerSecond: number,
-): number {
-	return simulationHoursFromTicks(tick, simTicksPerSecond) * DISPLAY_TIME_SCALE;
-}
 
 type ChartDatum = { hours: number; profit: number };
 
@@ -43,6 +31,7 @@ function rowToDatum(
 function downsampleForChart(
 	rows: { tick: number; cumulativeProfit: number }[],
 	simTicksPerSecond: number,
+	_refreshBucket?: number,
 ): ChartDatum[] {
 	if (rows.length <= MAX_CHART_POINTS) {
 		return rows.map((r) => rowToDatum(r, simTicksPerSecond));
@@ -68,7 +57,11 @@ export function ProfitChart() {
 	const state = useSimSnapshot((s) => s.state);
 	const config = useSimSnapshot((s) => s.config);
 	const { simTicksPerSecond } = config;
-	const data = downsampleForChart(cumulativePl, simTicksPerSecond);
+	const tickBucket = Math.floor(state.tick / CHART_UPDATE_EVERY_N_TICKS);
+	const data = useMemo(
+		() => downsampleForChart(cumulativePl, simTicksPerSecond, tickBucket),
+		[cumulativePl, simTicksPerSecond, tickBucket],
+	);
 	const stepMarkers = state.stepMarkers.filter((m) => m.tick > 0);
 
 	const chartText = "rgb(232 228 224)";
@@ -106,6 +99,26 @@ export function ProfitChart() {
 						MONTHS
 					</span>
 				)}
+				{state.endedAt24Months &&
+					!state.isBust &&
+					(() => {
+						const last = cumulativePl[cumulativePl.length - 1];
+						const profit =
+							(last?.cumulativeProfit ?? 0) - config.initialInvestment;
+						const isPositive = profit > 0;
+						return (
+							<span
+								className={
+									isPositive
+										? "px-2 py-1 text-sm font-bold bg-green text-factory-bg rounded-sm border-2 border-green-light pixel-font"
+										: "px-2 py-1 text-sm font-bold bg-factory-border text-text rounded-sm border-2 border-factory-muted pixel-font"
+								}
+							>
+								RESULT: £{profit.toLocaleString("en-GB")} profit after{" "}
+								{SIM_MONTHS_CAP} months
+							</span>
+						);
+					})()}
 			</div>
 			{data.length > 0 ? (
 				<div className="flex-1 min-h-0" suppressHydrationWarning>

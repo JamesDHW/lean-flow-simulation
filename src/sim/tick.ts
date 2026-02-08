@@ -156,6 +156,7 @@ function cloneState(state: SimState): SimState {
 		jidokaUntilTick: state.jidokaUntilTick,
 		jidokaStationId: state.jidokaStationId,
 		isBust: state.isBust,
+		endedAt24Months: state.endedAt24Months,
 		pendingAndonStationIds: [...state.pendingAndonStationIds],
 		managerFromStationId: state.managerFromStationId,
 		managerToStationId: state.managerToStationId,
@@ -227,6 +228,7 @@ export function createInitialState(config: SimConfig): SimState {
 		jidokaUntilTick: undefined,
 		jidokaStationId: undefined,
 		isBust: false,
+		endedAt24Months: false,
 		pendingAndonStationIds: [],
 		managerFromStationId: config.stations[0]?.id ?? null,
 		managerToStationId: null,
@@ -1317,8 +1319,7 @@ function processManager(
 				st.defectCount += 1;
 				const q = state.stationQuality.get(stationId);
 				if (q) {
-					q.pauseUntilTick =
-						state.tick + getAndonPauseTicks(config, stationId);
+					q.pauseUntilTick = state.tick + getAndonPauseTicks(config, stationId);
 				}
 				if (config.jidokaLineStop && isJidokaStepOrLater(config)) {
 					triggerJidokaAtStation(state, config, stationId);

@@ -19,7 +19,6 @@ const ITEM_W = 16;
 const ITEM_H = 12;
 const ITEM_STYLE = { transition: "x 180ms ease-out, y 180ms ease-out" };
 const BATCH_BUFFER_PURPLE = "#a855f7";
-const CUSTOMER_SAD_TICKS = 30;
 const FINAL_BIN_BOX_W = 16;
 const FINAL_BIN_BOX_H = 14;
 const FINAL_BIN_STACK_COLS = 8;
@@ -201,10 +200,19 @@ export function ProductionLineSvg() {
 	const departmentBoxes = getDepartmentBoxes(config);
 	const { width, height } = getLayoutBounds(config);
 	const tickIntervalMs = 1000 / config.speed;
-	const customerSad =
-		(state.totalDefectiveCount ?? state.defectiveIds.length) > 0 ||
-		(state.lastDefectShippedTick != null &&
-			state.tick - state.lastDefectShippedTick < CUSTOMER_SAD_TICKS);
+	const acceptedCount =
+		state.totalCompletedCount ?? state.completedIds.length;
+	const lastStationId = stationOrder[stationOrder.length - 1];
+	const rejectedAtEndForCustomer = lastStationId
+		? (state.stationStates.get(lastStationId)?.defectCount ?? 0)
+		: (state.rejectedAtEndCount ?? 0);
+	const defectsReachedCustomer =
+		state.totalDefectiveCount ?? state.defectiveIds.length;
+	const rejectedCount = rejectedAtEndForCustomer + defectsReachedCustomer;
+	const totalReachedCustomer = acceptedCount + rejectedCount;
+	const defectProportion =
+		totalReachedCustomer > 0 ? rejectedCount / totalReachedCustomer : 0;
+	const customerSad = defectProportion >= 1 / 5;
 	const defectRateByStation = getMeasuredDefectPercentByStation(state);
 	const defectProbabilityByStation = getDefectProbabilityPercentByStation(
 		state,

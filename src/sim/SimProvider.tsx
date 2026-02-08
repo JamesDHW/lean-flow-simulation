@@ -1,5 +1,11 @@
-import { createContext, useMemo, useRef, useContext } from "react";
-import type { StepId } from "./step-config";
+import {
+	createContext,
+	useMemo,
+	useRef,
+	useContext,
+	useEffect,
+} from "react";
+import type { ConfigStepId } from "./step-config";
 import type { SimSnapshot, SimStore } from "./store";
 import { createSimStore, useSimStoreSnapshot } from "./store";
 import type { SimConfig } from "./types";
@@ -8,7 +14,7 @@ const SimStoreContext = createContext<SimStore | null>(null);
 
 export interface SimProviderProps {
 	children: React.ReactNode;
-	initialStepId?: StepId;
+	initialStepId?: ConfigStepId;
 }
 
 export function SimProvider({
@@ -22,6 +28,13 @@ export function SimProvider({
 	const store = storeRef.current;
 
 	const value = useMemo(() => store, [store]);
+
+	useEffect(() => {
+		return () => {
+			store.pause();
+			storeRef.current = null;
+		};
+	}, [store]);
 
 	return (
 		<SimStoreContext.Provider value={value}>

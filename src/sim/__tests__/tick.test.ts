@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { getStationWip, getWip } from "../metrics";
+import { getWip, getWipForInventoryCost } from "../metrics";
+import { computeTickPl } from "../pl";
 import { getInitialConfig } from "../presets";
 import { createInitialState, tick } from "../tick";
 
 describe("tick invariants", () => {
-	const seed = 12345;
-	const config = getInitialConfig("step-1", seed);
+	const config = getInitialConfig("step-1");
 
 	function runTicks(n: number) {
 		let state = createInitialState(config);
@@ -16,28 +16,12 @@ describe("tick invariants", () => {
 		return state;
 	}
 
-	it("each station WIP never exceeds that station's wipLimit", () => {
+	it("each station inProcess never exceeds capacity", () => {
 		const state = runTicks(50);
 		for (const sc of config.stations) {
-			const wip = getStationWip(state, sc.id);
-			const cap = sc.wipLimit ?? Number.POSITIVE_INFINITY;
-			expect(wip).toBeLessThanOrEqual(cap);
-		}
-	});
-
-	it("buffer capacities are never exceeded", () => {
-		let state = createInitialState(config);
-		for (let i = 0; i < 30; i++) {
-			const result = tick(state, config);
-			state = result.state;
-			for (const sc of config.stations) {
-				const st = state.stationStates.get(sc.id);
-				expect(st).toBeDefined();
-				if (st) {
-					expect(st.inputQueue.length).toBeLessThanOrEqual(sc.bufferBefore);
-					expect(st.inProcess.length).toBeLessThanOrEqual(sc.capacity);
-					expect(st.outputQueue.length).toBeLessThanOrEqual(sc.bufferAfter);
-				}
+			const st = state.stationStates.get(sc.id);
+			if (st) {
+				expect(st.inProcess.length).toBeLessThanOrEqual(sc.capacity);
 			}
 		}
 	});
@@ -71,39 +55,25 @@ describe("tick invariants", () => {
 		}
 	});
 
-	it("deterministic runs with same seed produce same state", () => {
-		const configA = getInitialConfig("step-1", 999);
-		const configB = getInitialConfig("step-1", 999);
-		let stateA = createInitialState(configA);
-		let stateB = createInitialState(configB);
-		for (let i = 0; i < 15; i++) {
-			stateA = tick(stateA, configA).state;
-			stateB = tick(stateB, configB).state;
+	it("same state yields deterministic tick result", () => {
+		let state = createInitialState(config);
+		for (let i = 0; i < 5; i++) {
+			state = tick(state, config).state;
 		}
-		expect(stateA.tick).toBe(stateB.tick);
-		expect(stateA.completedIds.length).toBe(stateB.completedIds.length);
-		expect(stateA.defectiveIds.length).toBe(stateB.defectiveIds.length);
-		expect(getWip(stateA)).toBe(getWip(stateB));
-	});
-
-	it("different seeds produce different outcomes after many ticks", () => {
-		const state1 = runTicks(40);
-		const config2 = getInitialConfig("step-1", 54321);
-		let state2 = createInitialState(config2);
-		for (let i = 0; i < 40; i++) {
-			state2 = tick(state2, config2).state;
-		}
-		const sameCompleted =
-			state1.completedIds.length === state2.completedIds.length &&
-			state1.completedIds.every((id, j) => id === state2.completedIds[j]);
-		const sameDefects =
-			state1.defectiveIds.length === state2.defectiveIds.length &&
-			state1.defectiveIds.every((id, j) => id === state2.defectiveIds[j]);
-		expect(sameCompleted && sameDefects).toBe(false);
+		const resultA = tick(state, config);
+		const resultB = tick(state, config);
+		expect(resultA.state.tick).toBe(resultB.state.tick);
+		expect(resultA.state.completedIds.length).toBe(
+			resultB.state.completedIds.length,
+		);
+		expect(resultA.state.defectiveIds.length).toBe(
+			resultB.state.defectiveIds.length,
+		);
+		expect(getWip(resultA.state)).toBe(getWip(resultB.state));
 	});
 
 	it("market change on request emits marketChangeTriggered and resets learning", () => {
-		const config = getInitialConfig("step-1", 100);
+		const config = getInitialConfig("step-1");
 		let state = createInitialState(config);
 		for (let i = 0; i < 5; i++) {
 			const result = tick(state, config, { marketChangeRequested: i === 2 });
@@ -119,12 +89,19 @@ describe("tick invariants", () => {
 	});
 
 	it("defect shipped to customer emits defectShippedToCustomer when no red bin at last", () => {
-		const config = getInitialConfig("step-1", 200);
-		config.redBins = false;
-		config.redBinsAtAllStations = false;
+		const config = getInitialConfig("step-1");
+		config.stations = config.stations.map((s) => ({
+			...s,
+			defectProbability: 0.6,
+			redBin: false,
+			travelTicks: 0,
+			cycleTime: 200,
+			cycleVariance: 20,
+			trainingEffectiveness: 1,
+		}));
 		let state = createInitialState(config);
 		let hadShippedEvent = false;
-		for (let i = 0; i < 100 && !hadShippedEvent; i++) {
+		for (let i = 0; i < 400 && !hadShippedEvent; i++) {
 			const result = tick(state, config);
 			state = result.state;
 			hadShippedEvent = result.events.some(
@@ -132,5 +109,113 @@ describe("tick invariants", () => {
 			);
 		}
 		expect(hadShippedEvent || state.defectiveIds.length > 0).toBe(true);
+	});
+
+	it("cumulative material units equals total materialConsumed (arrival-only charging)", () => {
+		const config = getInitialConfig("step-1");
+		let state = createInitialState(config);
+		let completedBefore = state.completedIds.length;
+		let cumulativeMaterialUnits = 0;
+		let totalMaterialConsumed = 0;
+		for (let i = 0; i < 150; i++) {
+			const result = tick(state, config);
+			state = result.state;
+			const tickPl = computeTickPl(
+				state,
+				config,
+				completedBefore,
+				result.events,
+			);
+			completedBefore = state.completedIds.length;
+			cumulativeMaterialUnits += tickPl.materialUnits;
+			for (const e of result.events) {
+				if (e.type === "materialConsumed") totalMaterialConsumed += 1;
+			}
+		}
+		expect(cumulativeMaterialUnits).toBe(totalMaterialConsumed);
+	});
+
+	it("cumulative material equals arrivals with red bin at last (no spike when defects reach end)", () => {
+		const config = getInitialConfig("step-1");
+		config.stations = config.stations.map((s, i) => ({
+			...s,
+			redBin: i === config.stations.length - 1,
+		}));
+		let state = createInitialState(config);
+		let completedBefore = state.completedIds.length;
+		let cumulativeMaterialUnits = 0;
+		let totalMaterialConsumed = 0;
+		for (let i = 0; i < 200; i++) {
+			const result = tick(state, config);
+			state = result.state;
+			const tickPl = computeTickPl(
+				state,
+				config,
+				completedBefore,
+				result.events,
+			);
+			completedBefore = state.completedIds.length;
+			cumulativeMaterialUnits += tickPl.materialUnits;
+			for (const e of result.events) {
+				if (e.type === "materialConsumed") totalMaterialConsumed += 1;
+			}
+		}
+		expect(cumulativeMaterialUnits).toBe(totalMaterialConsumed);
+	});
+
+	it("inventory cost uses WIP excluding red-bin defectives", () => {
+		const config = getInitialConfig("step-1");
+		config.stations = config.stations.map((s, i) => ({
+			...s,
+			redBin: i === config.stations.length - 1,
+		}));
+		const state = createInitialState(config);
+		const order = config.stations.map((s) => s.id);
+		const lastStationId = order[order.length - 1];
+		const lastSt = state.stationStates.get(lastStationId);
+		if (!lastSt) throw new Error("no last station");
+		const itemId = "item-0";
+		state.items.set(itemId, {
+			id: itemId,
+			status: "waiting",
+			stationId: lastStationId,
+			remainingWorkMs: 0,
+			createdAtTick: 0,
+			isDefective: true,
+		});
+		state.nextItemId = 1;
+		lastSt.outputQueue.push(itemId);
+		const wipTotal = getWip(state);
+		const wipForInventory = getWipForInventoryCost(state, config);
+		expect(wipTotal).toBe(1);
+		expect(wipForInventory).toBe(0);
+		const tickPl = computeTickPl(state, config, 0, []);
+		expect(tickPl.inventoryCost).toBe(0);
+	});
+
+	it("no arrivals in a tick yields zero material cost for that tick", () => {
+		const config = getInitialConfig("step-1");
+		let state = createInitialState(config);
+		let hadZeroArrivalTick = false;
+		for (let i = 0; i < 50; i++) {
+			const completedBefore = state.completedIds.length;
+			const result = tick(state, config);
+			state = result.state;
+			const materialConsumedThisTick = result.events.filter(
+				(e) => e.type === "materialConsumed",
+			).length;
+			if (materialConsumedThisTick === 0) {
+				hadZeroArrivalTick = true;
+				const tickPl = computeTickPl(
+					state,
+					config,
+					completedBefore,
+					result.events,
+				);
+				expect(tickPl.materialUnits).toBe(0);
+				expect(tickPl.materialCost).toBe(0);
+			}
+		}
+		expect(hadZeroArrivalTick).toBe(true);
 	});
 });

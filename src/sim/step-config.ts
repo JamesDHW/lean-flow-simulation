@@ -12,6 +12,8 @@ export const STEP_IDS = [
 
 export type StepId = (typeof STEP_IDS)[number];
 
+export type ConfigStepId = StepId | "playground";
+
 export const STEP_LABELS: Record<StepId, string> = {
 	intro: "Intro",
 	"step-1": "1. Customer Feedback",

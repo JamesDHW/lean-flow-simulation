@@ -5,13 +5,15 @@
   --color-factory-surface: #2c2c2c;
   --color-factory-panel: #3d3632;
   --color-factory-border: #5c534c;
-  --color-factory-muted: #6b6360;
+  --color-factory-muted: #a19895;
   --color-rust: #b7410e;
   --color-rust-light: #d35400;
   --color-copper: #b87333;
   --color-steel: #71797e;
   --color-text: #e8e4e0;
-  --color-text-muted: #9c958e;
+  --color-text-muted: #c2b5a9;
+  --color-green: #00c853;
+  --color-green-light: #008f3a;
   --color-accent: #b87333;
   --color-accent-dim: #71797e;
   --color-danger: #c62828;

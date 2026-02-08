@@ -1,4 +1,4 @@
-import type { StepId } from "./step-config";
+import type { ConfigStepId } from "./step-config";
 import type { DepartmentId, SimConfig, StationConfig } from "./types";
 
 const DEPT_1: DepartmentId = "dept-1";
@@ -12,10 +12,15 @@ const defaultStations: StationConfig[] = [
 		cycleTime: 900,
 		cycleVariance: 90,
 		capacity: 1,
-		bufferBefore: 5,
-		bufferAfter: 5,
 		batchSize: 6,
-		wipLimit: 50,
+		trainingEffectiveness: 0.5,
+		andonEnabled: false,
+		defectProbability: 0.65,
+		redBin: false,
+		travelTicks: 3,
+		andonPauseTicks: 1,
+		reworkSendsBack: false,
+		reworkTicks: 9,
 	},
 	{
 		id: "s2",
@@ -23,10 +28,15 @@ const defaultStations: StationConfig[] = [
 		cycleTime: 900,
 		cycleVariance: 90,
 		capacity: 1,
-		bufferBefore: 5,
-		bufferAfter: 5,
 		batchSize: 6,
-		wipLimit: 50,
+		trainingEffectiveness: 0.5,
+		andonEnabled: false,
+		defectProbability: 0.65,
+		redBin: false,
+		travelTicks: 3,
+		andonPauseTicks: 1,
+		reworkSendsBack: false,
+		reworkTicks: 9,
 	},
 	{
 		id: "s3",
@@ -34,10 +44,15 @@ const defaultStations: StationConfig[] = [
 		cycleTime: 900,
 		cycleVariance: 90,
 		capacity: 1,
-		bufferBefore: 5,
-		bufferAfter: 5,
 		batchSize: 6,
-		wipLimit: 50,
+		trainingEffectiveness: 0.5,
+		andonEnabled: false,
+		defectProbability: 0.65,
+		redBin: false,
+		travelTicks: 3,
+		andonPauseTicks: 1,
+		reworkSendsBack: false,
+		reworkTicks: 9,
 	},
 	{
 		id: "s4",
@@ -45,10 +60,15 @@ const defaultStations: StationConfig[] = [
 		cycleTime: 900,
 		cycleVariance: 90,
 		capacity: 1,
-		bufferBefore: 5,
-		bufferAfter: 5,
 		batchSize: 6,
-		wipLimit: 50,
+		trainingEffectiveness: 0.5,
+		andonEnabled: false,
+		defectProbability: 0.65,
+		redBin: false,
+		travelTicks: 3,
+		andonPauseTicks: 1,
+		reworkSendsBack: false,
+		reworkTicks: 9,
 	},
 	{
 		id: "s5",
@@ -56,10 +76,15 @@ const defaultStations: StationConfig[] = [
 		cycleTime: 2100,
 		cycleVariance: 210,
 		capacity: 1,
-		bufferBefore: 5,
-		bufferAfter: 5,
 		batchSize: 6,
-		wipLimit: 50,
+		trainingEffectiveness: 0.5,
+		andonEnabled: false,
+		defectProbability: 0.65,
+		redBin: false,
+		travelTicks: 3,
+		andonPauseTicks: 1,
+		reworkSendsBack: false,
+		reworkTicks: 9,
 	},
 	{
 		id: "s6",
@@ -67,10 +92,15 @@ const defaultStations: StationConfig[] = [
 		cycleTime: 900,
 		cycleVariance: 90,
 		capacity: 1,
-		bufferBefore: 5,
-		bufferAfter: 5,
 		batchSize: 6,
-		wipLimit: 50,
+		trainingEffectiveness: 0.5,
+		andonEnabled: false,
+		defectProbability: 0.65,
+		redBin: false,
+		travelTicks: 3,
+		andonPauseTicks: 1,
+		reworkSendsBack: false,
+		reworkTicks: 9,
 	},
 	{
 		id: "s7",
@@ -78,10 +108,15 @@ const defaultStations: StationConfig[] = [
 		cycleTime: 900,
 		cycleVariance: 90,
 		capacity: 1,
-		bufferBefore: 5,
-		bufferAfter: 5,
 		batchSize: 6,
-		wipLimit: 50,
+		trainingEffectiveness: 0.5,
+		andonEnabled: false,
+		defectProbability: 0.65,
+		redBin: false,
+		travelTicks: 3,
+		andonPauseTicks: 1,
+		reworkSendsBack: false,
+		reworkTicks: 9,
 	},
 	{
 		id: "s8",
@@ -89,10 +124,15 @@ const defaultStations: StationConfig[] = [
 		cycleTime: 900,
 		cycleVariance: 90,
 		capacity: 1,
-		bufferBefore: 5,
-		bufferAfter: 5,
 		batchSize: 6,
-		wipLimit: 50,
+		trainingEffectiveness: 0.5,
+		andonEnabled: false,
+		defectProbability: 0.65,
+		redBin: false,
+		travelTicks: 3,
+		andonPauseTicks: 1,
+		reworkSendsBack: false,
+		reworkTicks: 9,
 	},
 	{
 		id: "s9",
@@ -100,56 +140,48 @@ const defaultStations: StationConfig[] = [
 		cycleTime: 900,
 		cycleVariance: 90,
 		capacity: 1,
-		bufferBefore: 5,
-		bufferAfter: 5,
 		batchSize: 6,
-		wipLimit: 50,
+		trainingEffectiveness: 0.5,
+		andonEnabled: false,
+		defectProbability: 0.65,
+		redBin: false,
+		travelTicks: 3,
+		andonPauseTicks: 1,
+		reworkSendsBack: false,
+		reworkTicks: 9,
 	},
 ];
 
-const baseConfig: Omit<SimConfig, "stepId" | "seed" | "stations"> = {
+const baseConfig: Omit<SimConfig, "stepId" | "stations"> = {
 	simTicksPerSecond: 20,
 	speed: 10,
-	batchSize: 4,
-	arrivalRateMs: 2000,
 	pushOrPull: "push",
-	defectProbability: 0.65,
-	redBins: false,
-	redBinsAtAllStations: false,
 	layoutMode: "departments",
-	trainingEffectiveness: 0.5,
-	reworkSendsBack: true,
-	reworkTicks: 9,
-	revenuePerItem: 1500,
-	laborCostPerTickPerEmployee: 3,
+	revenuePerItem: 15000,
+	laborCostPerTickPerEmployee: 15,
 	inventoryCostPerItemPerTick: 2,
-	materialCostPerItem: 100,
-	defectCostCustomerShipped: 50,
-	andonEnabled: false,
-	andonPauseTicks: 25,
-	travelTicksBetweenStations: 3,
+	materialCostPerItem: 500,
+	defectCostCustomerShipped: 500,
 	marketChangeIntervalTicks: null,
 	marketChangeAutoIntervalMs: 20000,
-	initialInvestment: 100000,
-	managerReworkEnabled: false,
+	initialInvestment: 1000000,
 	managerReworkProbability: 0.6,
 };
 
 export interface StepPreset {
 	config: Partial<SimConfig>;
 	enabledControls: {
-		batchSize: boolean;
-		pushPull: boolean;
-		wipLimit: boolean;
-		defectProbability: boolean;
-		trainingEffectiveness: boolean;
-		cycleVariance: boolean;
-		cycleTime: boolean;
-		tickSpeed: boolean;
-		andon: boolean;
-		layoutMode: boolean;
-		marketChange: boolean;
-		blueBins: boolean;
+		batchSize?: boolean;
+		pushPull?: boolean;
+		defectProbability?: boolean;
+		trainingEffectiveness?: boolean;
+		cycleVariance?: boolean;
+		cycleTime?: boolean;
+		tickSpeed?: boolean;
+		andon?: boolean;
+		layoutMode?: boolean;
+		marketChange?: boolean;
+		blueBins?: boolean;
 	};
 }
 
@@ -160,10 +192,15 @@ const taktStations: StationConfig[] = [
 		cycleTime: 900,
 		cycleVariance: 90,
 		capacity: 1,
-		bufferBefore: 5,
-		bufferAfter: 5,
 		batchSize: 6,
-		wipLimit: 50,
+		trainingEffectiveness: 0.5,
+		andonEnabled: true,
+		defectProbability: 0.2,
+		redBin: true,
+		travelTicks: 6,
+		andonPauseTicks: 1,
+		reworkSendsBack: false,
+		reworkTicks: 9,
 	},
 	{
 		id: "s2",
@@ -171,10 +208,15 @@ const taktStations: StationConfig[] = [
 		cycleTime: 900,
 		cycleVariance: 90,
 		capacity: 1,
-		bufferBefore: 5,
-		bufferAfter: 5,
 		batchSize: 6,
-		wipLimit: 50,
+		trainingEffectiveness: 0.5,
+		andonEnabled: true,
+		defectProbability: 0.2,
+		redBin: true,
+		travelTicks: 6,
+		andonPauseTicks: 1,
+		reworkSendsBack: false,
+		reworkTicks: 9,
 	},
 	{
 		id: "s3",
@@ -182,10 +224,15 @@ const taktStations: StationConfig[] = [
 		cycleTime: 900,
 		cycleVariance: 90,
 		capacity: 1,
-		bufferBefore: 5,
-		bufferAfter: 5,
 		batchSize: 6,
-		wipLimit: 50,
+		trainingEffectiveness: 0.5,
+		andonEnabled: true,
+		defectProbability: 0.2,
+		redBin: true,
+		travelTicks: 6,
+		andonPauseTicks: 1,
+		reworkSendsBack: false,
+		reworkTicks: 9,
 	},
 	{
 		id: "s4",
@@ -193,10 +240,15 @@ const taktStations: StationConfig[] = [
 		cycleTime: 900,
 		cycleVariance: 90,
 		capacity: 1,
-		bufferBefore: 5,
-		bufferAfter: 5,
 		batchSize: 6,
-		wipLimit: 50,
+		trainingEffectiveness: 0.5,
+		andonEnabled: true,
+		defectProbability: 0.2,
+		redBin: true,
+		travelTicks: 6,
+		andonPauseTicks: 1,
+		reworkSendsBack: false,
+		reworkTicks: 9,
 	},
 	{
 		id: "s5a",
@@ -204,10 +256,15 @@ const taktStations: StationConfig[] = [
 		cycleTime: 1050,
 		cycleVariance: 105,
 		capacity: 1,
-		bufferBefore: 5,
-		bufferAfter: 5,
 		batchSize: 6,
-		wipLimit: 50,
+		trainingEffectiveness: 0.5,
+		andonEnabled: true,
+		defectProbability: 0.2,
+		redBin: true,
+		travelTicks: 6,
+		andonPauseTicks: 1,
+		reworkSendsBack: false,
+		reworkTicks: 9,
 	},
 	{
 		id: "s5b",
@@ -215,10 +272,15 @@ const taktStations: StationConfig[] = [
 		cycleTime: 1050,
 		cycleVariance: 105,
 		capacity: 1,
-		bufferBefore: 5,
-		bufferAfter: 5,
 		batchSize: 6,
-		wipLimit: 50,
+		trainingEffectiveness: 0.5,
+		andonEnabled: true,
+		defectProbability: 0.2,
+		redBin: true,
+		travelTicks: 6,
+		andonPauseTicks: 1,
+		reworkSendsBack: false,
+		reworkTicks: 9,
 	},
 	{
 		id: "s6",
@@ -226,10 +288,15 @@ const taktStations: StationConfig[] = [
 		cycleTime: 900,
 		cycleVariance: 90,
 		capacity: 1,
-		bufferBefore: 5,
-		bufferAfter: 5,
 		batchSize: 6,
-		wipLimit: 50,
+		trainingEffectiveness: 0.5,
+		andonEnabled: true,
+		defectProbability: 0.2,
+		redBin: true,
+		travelTicks: 6,
+		andonPauseTicks: 1,
+		reworkSendsBack: false,
+		reworkTicks: 9,
 	},
 	{
 		id: "s7",
@@ -237,10 +304,15 @@ const taktStations: StationConfig[] = [
 		cycleTime: 900,
 		cycleVariance: 90,
 		capacity: 1,
-		bufferBefore: 5,
-		bufferAfter: 5,
 		batchSize: 6,
-		wipLimit: 50,
+		trainingEffectiveness: 0.5,
+		andonEnabled: true,
+		defectProbability: 0.2,
+		redBin: true,
+		travelTicks: 6,
+		andonPauseTicks: 1,
+		reworkSendsBack: false,
+		reworkTicks: 9,
 	},
 	{
 		id: "s8",
@@ -248,252 +320,182 @@ const taktStations: StationConfig[] = [
 		cycleTime: 900,
 		cycleVariance: 90,
 		capacity: 1,
-		bufferBefore: 5,
-		bufferAfter: 5,
 		batchSize: 6,
-		wipLimit: 50,
-	},
-	{
-		id: "s9",
-		departmentId: DEPT_3,
-		cycleTime: 900,
-		cycleVariance: 90,
-		capacity: 1,
-		bufferBefore: 5,
-		bufferAfter: 5,
-		batchSize: 6,
-		wipLimit: 50,
+		trainingEffectiveness: 0.5,
+		andonEnabled: true,
+		defectProbability: 0.2,
+		redBin: true,
+		travelTicks: 6,
+		andonPauseTicks: 1,
+		reworkSendsBack: false,
+		reworkTicks: 9,
 	},
 ];
 
-export const STEP_PRESETS: Record<StepId, StepPreset> = {
+function withLastStationRedBin(stations: StationConfig[]): StationConfig[] {
+	return stations.map((s, i) => ({
+		...s,
+		redBin: i === stations.length - 1,
+	}));
+}
+
+function withAllStationsRedBin(stations: StationConfig[]): StationConfig[] {
+	return stations.map((s) => ({ ...s, redBin: true }));
+}
+
+function withReworkSendsBack(
+	stations: StationConfig[],
+	value: boolean,
+): StationConfig[] {
+	return stations.map((s) => ({ ...s, reworkSendsBack: value }));
+}
+
+function withDefectProbability(
+	stations: StationConfig[],
+	value: number,
+): StationConfig[] {
+	return stations.map((s) => ({ ...s, defectProbability: value }));
+}
+
+function withAndonEnabled(
+	stations: StationConfig[],
+	value: boolean,
+): StationConfig[] {
+	return stations.map((s) => ({ ...s, andonEnabled: value }));
+}
+
+export const STEP_PRESETS: Record<ConfigStepId, StepPreset> = {
 	intro: {
 		config: {
 			...baseConfig,
+			stations: withReworkSendsBack(
+				defaultStations.map((s) => ({ ...s })),
+				false,
+			),
 		},
-		enabledControls: {
-			batchSize: false,
-			pushPull: false,
-			wipLimit: false,
-			defectProbability: false,
-			trainingEffectiveness: false,
-			cycleVariance: false,
-			cycleTime: false,
-			tickSpeed: true,
-			andon: false,
-			layoutMode: false,
-			marketChange: false,
-			blueBins: false,
-		},
+		enabledControls: {},
 	},
 	"step-1": {
 		config: {
 			...baseConfig,
-			redBins: true,
-			reworkSendsBack: false,
+			stations: withReworkSendsBack(
+				withLastStationRedBin(defaultStations.map((s) => ({ ...s }))),
+				false,
+			),
 		},
-		enabledControls: {
-			batchSize: false,
-			pushPull: false,
-			wipLimit: false,
-			defectProbability: false,
-			trainingEffectiveness: false,
-			cycleVariance: false,
-			cycleTime: false,
-			tickSpeed: true,
-			andon: false,
-			layoutMode: false,
-			marketChange: true,
-			blueBins: false,
-		},
+		enabledControls: {},
 	},
 	"step-2": {
 		config: {
 			...baseConfig,
-			redBins: true,
-			defectProbability: 0.2,
-			redBinsAtAllStations: true,
-			andonEnabled: false,
+			stations: withDefectProbability(
+				withAllStationsRedBin(defaultStations.map((s) => ({ ...s }))),
+				0.2,
+			),
 		},
-		enabledControls: {
-			batchSize: false,
-			pushPull: false,
-			wipLimit: false,
-			defectProbability: false,
-			trainingEffectiveness: false,
-			cycleVariance: false,
-			cycleTime: false,
-			tickSpeed: true,
-			andon: false,
-			layoutMode: false,
-			marketChange: true,
-			blueBins: false,
-		},
+		enabledControls: {},
 	},
 	"step-3": {
 		config: {
 			...baseConfig,
-			redBins: true,
-			defectProbability: 0.2,
-			redBinsAtAllStations: true,
-			andonEnabled: true,
-			managerReworkEnabled: true,
+			stations: withDefectProbability(
+				withAndonEnabled(
+					withAllStationsRedBin(defaultStations.map((s) => ({ ...s }))),
+					true,
+				),
+				0.2,
+			),
 		},
-		enabledControls: {
-			batchSize: false,
-			pushPull: false,
-			wipLimit: false,
-			defectProbability: false,
-			trainingEffectiveness: false,
-			cycleVariance: false,
-			cycleTime: false,
-			tickSpeed: true,
-			andon: true,
-			layoutMode: false,
-			marketChange: true,
-			blueBins: false,
-		},
+		enabledControls: {},
 	},
 	"step-4": {
 		config: {
 			...baseConfig,
-			redBins: true,
-			defectProbability: 0.2,
-			redBinsAtAllStations: true,
-			andonEnabled: true,
 			jidokaLineStop: true,
-			andonPauseTicks: 25,
-			managerReworkEnabled: true,
+			stations: withDefectProbability(
+				withAndonEnabled(
+					withAllStationsRedBin(defaultStations.map((s) => ({ ...s }))),
+					true,
+				),
+				0.2,
+			),
 		},
-		enabledControls: {
-			batchSize: false,
-			pushPull: false,
-			wipLimit: false,
-			defectProbability: false,
-			trainingEffectiveness: false,
-			cycleVariance: false,
-			cycleTime: false,
-			tickSpeed: true,
-			andon: true,
-			layoutMode: false,
-			marketChange: true,
-			blueBins: false,
-		},
+		enabledControls: {},
 	},
 	"step-5": {
 		config: {
 			...baseConfig,
-			redBins: true,
-			defectProbability: 0.2,
-			redBinsAtAllStations: true,
-			andonEnabled: true,
 			jidokaLineStop: true,
-			andonPauseTicks: 25,
 			layoutMode: "flow",
-			travelTicksBetweenStations: 0,
-			managerReworkEnabled: true,
+			stations: withDefectProbability(
+				withAndonEnabled(
+					withAllStationsRedBin(
+						defaultStations.map((s) => ({ ...s, travelTicks: 0 })),
+					),
+					true,
+				),
+				0.2,
+			),
 		},
-		enabledControls: {
-			batchSize: false,
-			pushPull: false,
-			wipLimit: false,
-			defectProbability: false,
-			trainingEffectiveness: false,
-			cycleVariance: false,
-			cycleTime: false,
-			tickSpeed: true,
-			andon: true,
-			layoutMode: true,
-			marketChange: true,
-			blueBins: false,
-		},
+		enabledControls: {},
 	},
 	"step-6": {
 		config: {
 			...baseConfig,
-			redBins: true,
-			defectProbability: 0.2,
-			redBinsAtAllStations: true,
-			andonEnabled: true,
 			jidokaLineStop: true,
-			andonPauseTicks: 25,
 			layoutMode: "flow",
-			travelTicksBetweenStations: 6,
 			pushOrPull: "pull",
-			managerReworkEnabled: true,
+			stations: withDefectProbability(
+				withAndonEnabled(
+					withAllStationsRedBin(
+						defaultStations.map((s) => ({ ...s, travelTicks: 6 })),
+					),
+					true,
+				),
+				0.2,
+			),
 		},
-		enabledControls: {
-			batchSize: false,
-			pushPull: true,
-			wipLimit: true,
-			defectProbability: false,
-			trainingEffectiveness: false,
-			cycleVariance: false,
-			cycleTime: false,
-			tickSpeed: true,
-			andon: true,
-			layoutMode: true,
-			marketChange: true,
-			blueBins: true,
-		},
+		enabledControls: {},
 	},
 	"step-7": {
 		config: {
 			...baseConfig,
-			redBins: true,
-			defectProbability: 0.2,
-			redBinsAtAllStations: true,
-			andonEnabled: true,
 			jidokaLineStop: true,
-			andonPauseTicks: 25,
 			layoutMode: "flow",
-			travelTicksBetweenStations: 6,
 			pushOrPull: "pull",
-			stations: taktStations,
-			managerReworkEnabled: true,
+			stations: withDefectProbability(
+				taktStations.map((s) => ({ ...s })),
+				0.2,
+			),
 		},
-		enabledControls: {
-			batchSize: false,
-			pushPull: true,
-			wipLimit: true,
-			defectProbability: false,
-			trainingEffectiveness: false,
-			cycleVariance: true,
-			cycleTime: false,
-			tickSpeed: true,
-			andon: true,
-			layoutMode: true,
-			marketChange: true,
-			blueBins: true,
-		},
+		enabledControls: {},
 	},
 	"step-8": {
 		config: {
 			...baseConfig,
-			batchSize: 1,
-			redBins: true,
-			redBinsAtAllStations: true,
-			andonEnabled: true,
 			jidokaLineStop: true,
-			andonPauseTicks: 25,
 			layoutMode: "flow",
-			travelTicksBetweenStations: 6,
 			pushOrPull: "pull",
-			managerReworkEnabled: true,
-			stations: taktStations.map((s) => ({
-				...s,
-				batchSize: 1,
-				cycleVariance: Math.round(s.cycleTime * 0.4),
-			})),
+			stations: withDefectProbability(
+				taktStations.map((s) => ({
+					...s,
+					batchSize: 1,
+					cycleVariance: Math.round(s.cycleTime * 0.4),
+				})),
+				0.2,
+			),
 		},
+		enabledControls: {},
+	},
+	playground: {
+		config: { ...baseConfig },
 		enabledControls: {
-			batchSize: false,
+			batchSize: true,
 			pushPull: true,
-			wipLimit: true,
-			defectProbability: false,
-			trainingEffectiveness: false,
+			defectProbability: true,
+			trainingEffectiveness: true,
 			cycleVariance: true,
-			cycleTime: false,
+			cycleTime: true,
 			tickSpeed: true,
 			andon: true,
 			layoutMode: true,
@@ -503,7 +505,7 @@ export const STEP_PRESETS: Record<StepId, StepPreset> = {
 	},
 };
 
-export function getInitialConfig(stepId: StepId, seed: number): SimConfig {
+export function getInitialConfig(stepId: ConfigStepId): SimConfig {
 	const preset = STEP_PRESETS[stepId];
 	const effective = preset ?? STEP_PRESETS.intro;
 	const stations = effective.config.stations ?? defaultStations;
@@ -512,6 +514,5 @@ export function getInitialConfig(stepId: StepId, seed: number): SimConfig {
 		...effective.config,
 		stations: stations.map((s) => ({ ...s })),
 		stepId,
-		seed,
 	};
 }

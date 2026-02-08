@@ -19,7 +19,6 @@ const ITEM_W = 16;
 const ITEM_H = 12;
 const ITEM_STYLE = { transition: "x 180ms ease-out, y 180ms ease-out" };
 const BATCH_BUFFER_PURPLE = "#a855f7";
-const ANDON_FLASH_TICKS = 8;
 const CUSTOMER_SAD_TICKS = 30;
 const FINAL_BIN_BOX_W = 16;
 const FINAL_BIN_BOX_H = 14;
@@ -33,8 +32,13 @@ const STATION_HEADER_H = 44;
 const STATION_WORKER_ROW_Y = 90;
 const STATION_AGENT_ROW_Y = 112;
 
-function itemColor(item: Item, inBatchBuffer: boolean): string {
-	if (item.status === "defective" || item.isDefective) return "#ef4444";
+function itemColor(
+	item: Item,
+	inBatchBuffer: boolean,
+	showDefectRed: boolean,
+): string {
+	if (showDefectRed && (item.status === "defective" || item.isDefective))
+		return "#ef4444";
 	if (inBatchBuffer) return BATCH_BUFFER_PURPLE;
 	if (item.status === "done") return "#22c55e";
 	if (item.status === "working") return "#3b82f6";
@@ -46,10 +50,10 @@ function hasRedBinAtStation(
 	stationId: string,
 	stationIndex: number,
 ): boolean {
-	if (!config.redBins) return false;
 	const order = config.stations.map((s) => s.id);
 	const isLast = stationIndex === order.length - 1;
-	return config.redBinsAtAllStations || isLast;
+	const station = config.stations[stationIndex];
+	return station?.redBin ?? isLast;
 }
 
 function walkPosition(
@@ -139,6 +143,12 @@ function getItemPositions(
 				y: baseY + Math.floor(i / 4) * (ITEM_H + 4),
 			});
 		});
+
+		if (st.andonHoldItemId != null && !itemsInTransit.has(st.andonHoldItemId)) {
+			const andonX = baseX + STATION_WIDTH / 2 - ITEM_W / 2;
+			const andonY = baseY + 24;
+			positions.set(st.andonHoldItemId, { x: andonX, y: andonY });
+		}
 	});
 
 	for (const agent of state.agents.values()) {
@@ -192,7 +202,7 @@ export function ProductionLineSvg() {
 	const { width, height } = getLayoutBounds(config);
 	const tickIntervalMs = 1000 / config.speed;
 	const customerSad =
-		state.defectiveIds.length > 0 ||
+		(state.totalDefectiveCount ?? state.defectiveIds.length) > 0 ||
 		(state.lastDefectShippedTick != null &&
 			state.tick - state.lastDefectShippedTick < CUSTOMER_SAD_TICKS);
 	const defectRateByStation = getMeasuredDefectPercentByStation(state);
@@ -207,6 +217,7 @@ export function ProductionLineSvg() {
 		for (const slot of st.inProcess) allItemIds.add(slot.itemId);
 		for (const id of st.batchBuffer) allItemIds.add(id);
 		for (const id of st.outputQueue) allItemIds.add(id);
+		if (st.andonHoldItemId != null) allItemIds.add(st.andonHoldItemId);
 	}
 	for (const t of state.transfers.values()) {
 		for (const id of t.itemIds) allItemIds.add(id);
@@ -217,7 +228,7 @@ export function ProductionLineSvg() {
 			<div className="overflow-x-auto">
 				<svg
 					viewBox={`0 0 ${width} ${height}`}
-					className="w-full h-auto max-w-10xl mx-auto"
+					className={`w-full h-auto mx-auto ${config.layoutMode === "flow" ? "max-w-10xl" : "max-w-5xl"}`}
 					style={{ minHeight: 200 }}
 					aria-labelledby={titleId}
 					role="img"
@@ -255,9 +266,13 @@ export function ProductionLineSvg() {
 						const defectMultiplier = quality?.defectMultiplier ?? 1;
 						const greenness = Math.max(0, 1 - defectMultiplier);
 						const fill = `rgb(${30 + greenness * 20} ${41 + greenness * 30} ${59})`;
-						const andonOn =
-							quality?.lastAndonTick != null &&
-							state.tick - quality.lastAndonTick < ANDON_FLASH_TICKS;
+						const stationState = state.stationStates.get(stationId);
+						const andonHold = stationState?.andonHoldItemId != null;
+						const tlAtStationResolving =
+							state.managerToStationId === stationId &&
+							state.managerResolvesAtTick != null &&
+							state.tick < state.managerResolvesAtTick;
+						const andonOn = andonHold || tlAtStationResolving;
 						const showRedBin = hasRedBinAtStation(config, stationId, i);
 						const showBlueBin = config.pushOrPull === "pull";
 						const defectCount =
@@ -460,7 +475,7 @@ export function ProductionLineSvg() {
 							);
 						});
 					})()}
-					{config.managerReworkEnabled &&
+					{config.stations.some((s) => s.andonEnabled) &&
 						(() => {
 							const fromId = state.managerFromStationId;
 							const toId = state.managerToStationId;
@@ -553,9 +568,14 @@ export function ProductionLineSvg() {
 							const { x: cx, y: cy } = getCustomerPosition(config);
 							const binH = 100;
 							const binY = cy - binH / 2;
-							const greenCount = state.completedIds.length;
-							const rejectedAtEnd = state.rejectedAtEndCount ?? 0;
-							const defectsReachedCustomer = state.defectiveIds.length;
+							const greenCount =
+								state.totalCompletedCount ?? state.completedIds.length;
+							const lastStationId = stationOrder[stationOrder.length - 1];
+							const rejectedAtEnd = lastStationId
+								? (state.stationStates.get(lastStationId)?.defectCount ?? 0)
+								: (state.rejectedAtEndCount ?? 0);
+							const defectsReachedCustomer =
+								state.totalDefectiveCount ?? state.defectiveIds.length;
 							const redCount = rejectedAtEnd + defectsReachedCustomer;
 							const binW = 160;
 							const greenX = cx - binW - 28;
@@ -676,7 +696,8 @@ export function ProductionLineSvg() {
 						const inBatchBuffer = stationOrder.some((sid) =>
 							state.stationStates.get(sid)?.batchBuffer.includes(itemId),
 						);
-						const fill = itemColor(item, inBatchBuffer);
+						const showDefectRed = config.stepId !== "intro";
+						const fill = itemColor(item, inBatchBuffer, showDefectRed);
 						return (
 							<rect
 								key={itemId}
@@ -698,7 +719,8 @@ export function ProductionLineSvg() {
 				enabled.cycleTime ||
 				enabled.cycleVariance ||
 				enabled.batchSize ||
-				enabled.wipLimit) && (
+				enabled.defectProbability ||
+				enabled.trainingEffectiveness) && (
 				<div className="w-full max-w-full min-w-0 mt-3 flex flex-wrap justify-between gap-3 overflow-hidden">
 					{config.stations.map((station, i) => (
 						<div
@@ -709,7 +731,7 @@ export function ProductionLineSvg() {
 								Station {i + 1}
 							</span>
 							<div className="flex flex-col gap-0.5 text-xs">
-								<span className="text-text-muted">Defect probability</span>
+								<span className="text-text-muted">Defect prob (effective)</span>
 								<span className="text-text font-medium tabular-nums">
 									{(defectProbabilityByStation[station.id] ?? 0).toFixed(1)}%
 								</span>
@@ -720,15 +742,64 @@ export function ProductionLineSvg() {
 									{(defectRateByStation[station.id] ?? 0).toFixed(1)}%
 								</span>
 							</div>
+							{enabled.defectProbability && (
+								<label className="flex flex-col gap-0.5 text-xs">
+									<span className="text-text-muted">Defect prob (base %)</span>
+									<input
+										type="range"
+										min={0}
+										max={100}
+										value={Math.round(station.defectProbability * 100)}
+										onChange={(e) => {
+											const next = config.stations.map((s, j) =>
+												j === i
+													? {
+															...s,
+															defectProbability: Number(e.target.value) / 100,
+														}
+													: s,
+											);
+											store.updateConfig({ stations: next });
+										}}
+										className="w-full accent-rust"
+									/>
+									<span className="text-factory-muted tabular-nums">
+										{Math.round(station.defectProbability * 100)}%
+									</span>
+								</label>
+							)}
+							{enabled.trainingEffectiveness && (
+								<label className="flex flex-col gap-0.5 text-xs">
+									<span className="text-text-muted">Training %</span>
+									<input
+										type="range"
+										min={0}
+										max={100}
+										value={Math.round(station.trainingEffectiveness * 100)}
+										onChange={(e) => {
+											const next = config.stations.map((s, j) =>
+												j === i
+													? {
+															...s,
+															trainingEffectiveness:
+																Number(e.target.value) / 100,
+														}
+													: s,
+											);
+											store.updateConfig({ stations: next });
+										}}
+										className="w-full accent-rust"
+									/>
+									<span className="text-factory-muted tabular-nums">
+										{Math.round(station.trainingEffectiveness * 100)}%
+									</span>
+								</label>
+							)}
 							{enabled.andon && (
 								<label className="flex flex-col gap-0.5 text-xs">
 									<span className="text-text-muted">Andon</span>
 									<select
-										value={
-											(station.andonEnabled ?? config.andonEnabled)
-												? "on"
-												: "off"
-										}
+										value={station.andonEnabled ? "on" : "off"}
 										onChange={(e) => {
 											const next = config.stations.map((s, j) =>
 												j === i
@@ -751,7 +822,7 @@ export function ProductionLineSvg() {
 										type="range"
 										min={1}
 										max={10}
-										value={station.batchSize ?? config.batchSize}
+										value={station.batchSize}
 										onChange={(e) => {
 											const next = config.stations.map((s, j) =>
 												j === i
@@ -763,7 +834,7 @@ export function ProductionLineSvg() {
 										className="w-full accent-rust"
 									/>
 									<span className="text-factory-muted tabular-nums">
-										{station.batchSize ?? config.batchSize}
+										{station.batchSize}
 									</span>
 								</label>
 							)}
@@ -812,29 +883,6 @@ export function ProductionLineSvg() {
 									/>
 									<span className="text-factory-muted tabular-nums">
 										{station.cycleVariance}
-									</span>
-								</label>
-							)}
-							{enabled.wipLimit && (
-								<label className="flex flex-col gap-0.5 text-xs">
-									<span className="text-text-muted">WIP limit</span>
-									<input
-										type="range"
-										min={1}
-										max={30}
-										value={station.wipLimit ?? 10}
-										onChange={(e) => {
-											const next = config.stations.map((s, j) =>
-												j === i
-													? { ...s, wipLimit: Number(e.target.value) }
-													: s,
-											);
-											store.updateConfig({ stations: next });
-										}}
-										className="w-full accent-rust"
-									/>
-									<span className="text-factory-muted tabular-nums">
-										{station.wipLimit ?? 10}
 									</span>
 								</label>
 							)}

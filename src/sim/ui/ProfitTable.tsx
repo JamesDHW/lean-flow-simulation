@@ -113,13 +113,13 @@ export function ProfitTable() {
 								<td className="text-right tabular-nums py-1 pr-2 text-factory-muted">
 									+£{config.revenuePerItem}/item
 								</td>
-								<td className="text-right text-accent tabular-nums py-1 pr-2">
+								<td className="text-right text-green tabular-nums py-1 pr-2">
 									+£{lastTick.revenue.toFixed(0)}
 								</td>
 								<td className="text-right tabular-nums py-1 pr-2 text-text-muted">
 									{lastTick.completedCount} items
 								</td>
-								<td className="text-right text-accent tabular-nums py-1 pr-2">
+								<td className="text-right text-green tabular-nums py-1 pr-2">
 									+£{lastCum.cumulativeRevenue.toFixed(0)}
 								</td>
 								<td className="text-right tabular-nums py-1 text-text-muted">
@@ -143,7 +143,7 @@ export function ProfitTable() {
 								<td
 									className={`text-right tabular-nums font-medium py-1 pr-2 ${
 										lastCum.cumulativeProfit >= 0
-											? "text-accent"
+											? "text-green"
 											: "text-danger-light"
 									}`}
 								>

@@ -38,7 +38,7 @@ export function ControlPanel() {
 						<button
 							type="button"
 							onClick={() => store.start()}
-							className="flex items-center gap-2 px-3 py-2 rounded-sm border-2 border-accent-dim bg-[#00c853] hover:bg-[#008f3a] text-factory-bg text-base font-medium"
+							className="flex items-center gap-2 px-3 py-2 rounded-sm border-2 border-accent-dim bg-green hover:bg-green-light text-factory-bg text-base font-medium"
 						>
 							<Play size={16} />
 							Start
@@ -52,19 +52,17 @@ export function ControlPanel() {
 						<RotateCcw size={16} />
 						Reset
 					</button>
-					{enabled.marketChange && (
-						<button
-							type="button"
-							onClick={handleMarketChange}
-							className={`flex items-center gap-2 px-3 py-2 rounded-sm border-2 text-base font-medium transition-colors duration-150 ${
-								marketChangeFlashing
-									? "bg-danger border-rust text-text"
-									: "border-accent-dim bg-[#00c853] hover:bg-[#008f3a] text-factory-bg text-base font-medium text-black"
-							}`}
-						>
-							Market Change
-						</button>
-					)}
+					<button
+						type="button"
+						onClick={handleMarketChange}
+						className={`flex items-center gap-2 px-3 py-2 rounded-sm border-2 text-base font-medium transition-colors duration-150 ${
+							marketChangeFlashing
+								? "bg-danger border-rust text-text"
+								: "border-accent-dim bg-[#00c853] hover:bg-[#008f3a] text-factory-bg text-base font-medium text-black"
+						}`}
+					>
+						Market Change
+					</button>
 				</div>
 			</div>
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -102,45 +100,21 @@ export function ControlPanel() {
 						</select>
 					</label>
 				)}
-				{enabled.trainingEffectiveness && (
-					<label className="flex flex-col gap-1 text-base">
-						<span className="text-text-muted">
-							Training effectiveness (0-100%)
-						</span>
-						<input
-							type="range"
-							min={0}
-							max={100}
-							value={Math.round(config.trainingEffectiveness * 100)}
-							onChange={(e) =>
-								store.updateConfig({
-									trainingEffectiveness: Number(e.target.value) / 100,
-								})
-							}
-							className="w-full accent-rust"
-						/>
-						<span className="text-factory-muted">
-							{Math.round(config.trainingEffectiveness * 100)}%
-						</span>
-					</label>
-				)}
-				{enabled.tickSpeed && (
-					<label className="flex flex-col gap-1 text-base">
-						<span className="text-text-muted">Speed (ticks/sec)</span>
-						<input
-							type="range"
-							min={1}
-							max={20}
-							step={1}
-							value={config.speed}
-							onChange={(e) =>
-								store.updateConfig({ speed: Number(e.target.value) })
-							}
-							className="w-full accent-rust"
-						/>
-						<span className="text-factory-muted">{config.speed} /s</span>
-					</label>
-				)}
+				<label className="flex flex-col gap-1 text-base">
+					<span className="text-text-muted">Speed (ticks/sec)</span>
+					<input
+						type="range"
+						min={1}
+						max={20}
+						step={1}
+						value={config.speed}
+						onChange={(e) =>
+							store.updateConfig({ speed: Number(e.target.value) })
+						}
+						className="w-full accent-rust"
+					/>
+					<span className="text-factory-muted">{config.speed} /s</span>
+				</label>
 			</div>
 		</div>
 	);

@@ -46,11 +46,18 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en" className="bg-factory-bg text-text">
+		<html
+			lang="en"
+			className="bg-factory-bg text-text"
+			suppressHydrationWarning
+		>
 			<head>
 				<HeadContent />
 			</head>
-			<body className="bg-factory-bg text-text min-h-screen">
+			<body
+				className="bg-factory-bg text-text min-h-screen"
+				suppressHydrationWarning
+			>
 				<Header />
 				{children}
 				<TanStackDevtools

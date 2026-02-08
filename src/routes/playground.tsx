@@ -12,7 +12,7 @@ export const Route = createFileRoute("/playground")({
 
 function PlaygroundPage() {
 	return (
-		<SimProvider initialStepId="config">
+		<SimProvider key="playground" initialStepId="playground">
 			<div className="min-h-screen bg-factory-bg text-text p-4 md:p-6">
 				<div className="mx-auto max-w-full w-full space-y-4">
 					<div className="p-4 rounded-sm border-2 border-factory-border bg-factory-panel/80">

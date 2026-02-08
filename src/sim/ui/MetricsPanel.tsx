@@ -35,7 +35,9 @@ export function MetricsPanel() {
 					{Number.isFinite(leadTime) ? `${Math.round(leadTime)} minutes` : "—"}
 				</dd>
 				<dt className="text-text-muted">Completed Items</dt>
-				<dd className="text-text font-medium">{state.completedIds.length}</dd>
+				<dd className="text-text font-medium">
+					{state.totalCompletedCount ?? state.completedIds.length}
+				</dd>
 				<dt className="text-text-muted">Idle Percentage</dt>
 				<dd className="text-text font-medium">{idlePercent.toFixed(1)}%</dd>
 				<dt className="text-text-muted">Blocked Percentage</dt>

@@ -12,6 +12,59 @@ export function getWip(state: SimState): number {
 	return n;
 }
 
+function hasRedBinAtStation(config: SimConfig, stationIndex: number): boolean {
+	const station = config.stations[stationIndex];
+	const isLast = stationIndex === config.stations.length - 1;
+	return station?.redBin ?? isLast;
+}
+
+/**
+ * WIP count excluding items in red bins (defective at stations with a red bin).
+ * Use for inventory holding cost so red-bin stock is not charged.
+ */
+export function getWipExcludingRedBin(
+	state: SimState,
+	config: SimConfig,
+): number {
+	const order = config.stations.map((s) => s.id);
+	let n = 0;
+	for (let i = 0; i < order.length; i++) {
+		const stationId = order[i];
+		const st = state.stationStates.get(stationId);
+		if (!st) continue;
+		const excludeDefectives = hasRedBinAtStation(config, i);
+		const itemIds = [
+			...st.inputQueue,
+			...st.inProcess.map((s) => s.itemId),
+			...st.batchBuffer,
+			...st.outputQueue,
+		];
+		for (const itemId of itemIds) {
+			const item = state.items.get(itemId);
+			if (excludeDefectives && item?.isDefective === true) continue;
+			n += 1;
+		}
+	}
+	for (const t of state.transfers.values()) {
+		const fromIndex = order.indexOf(t.fromStationId);
+		const excludeDefectives =
+			fromIndex >= 0 && hasRedBinAtStation(config, fromIndex);
+		for (const itemId of t.itemIds) {
+			const item = state.items.get(itemId);
+			if (excludeDefectives && item?.isDefective === true) continue;
+			n += 1;
+		}
+	}
+	return n;
+}
+
+export function getWipForInventoryCost(
+	state: SimState,
+	config: SimConfig,
+): number {
+	return getWipExcludingRedBin(state, config);
+}
+
 export function getStationWip(state: SimState, stationId: string): number {
 	const st = state.stationStates.get(stationId);
 	if (!st) return 0;
@@ -27,7 +80,8 @@ export function getThroughput(
 	state: SimState,
 	lastTickCompleted: number,
 ): number {
-	return state.completedIds.length - lastTickCompleted;
+	const total = state.totalCompletedCount ?? state.completedIds.length;
+	return total - lastTickCompleted;
 }
 
 export function getLeadTimeAvg(state: SimState, config: SimConfig): number {
@@ -48,7 +102,7 @@ export function getLeadTimeAvg(state: SimState, config: SimConfig): number {
 }
 
 export function getDefectsCount(state: SimState): number {
-	return state.defectiveIds.length;
+	return state.totalDefectiveCount ?? state.defectiveIds.length;
 }
 
 export function getMeasuredDefectPercent(state: SimState): number {
@@ -65,7 +119,7 @@ function getDefectRateDenominators(state: SimState): {
 	for (const st of state.stationStates.values()) {
 		totalRejected += st.defectCount;
 	}
-	const completed = state.completedIds.length;
+	const completed = state.totalCompletedCount ?? state.completedIds.length;
 	const totalOutcomes = completed + totalRejected;
 	return { totalRejected, totalOutcomes };
 }
@@ -94,9 +148,7 @@ export function getDefectProbabilityPercentByStation(
 ): Record<string, number> {
 	const byStation: Record<string, number> = {};
 	for (const sc of config.stations) {
-		const baseDefectProb =
-			sc.defectProbability ??
-			config.defectProbability * config.trainingEffectiveness;
+		const baseDefectProb = sc.defectProbability * sc.trainingEffectiveness;
 		const defectMultiplier =
 			state.stationQuality.get(sc.id)?.defectMultiplier ?? 1;
 		const prob = Math.min(1, baseDefectProb * defectMultiplier);
@@ -109,7 +161,10 @@ export function getDefectsThisTick(
 	state: SimState,
 	previousDefectCount: number,
 ): number {
-	return state.defectiveIds.length - previousDefectCount;
+	return (
+		(state.totalDefectiveCount ?? state.defectiveIds.length) -
+		previousDefectCount
+	);
 }
 
 export function getIdleBlockedPercent(
@@ -124,7 +179,9 @@ export function getIdleBlockedPercent(
 		if (!st) continue;
 		totalCapacity += sc.capacity;
 		inProcess += st.inProcess.length;
-		if (st.inputQueue.length >= sc.bufferBefore) blocked += 1;
+		const batchSize = sc.batchSize;
+		const outbound = st.batchBuffer.length + st.outputQueue.length;
+		if (config.pushOrPull === "pull" && outbound >= batchSize) blocked += 1;
 	}
 	const idlePercent =
 		totalCapacity > 0 ? ((totalCapacity - inProcess) / totalCapacity) * 100 : 0;

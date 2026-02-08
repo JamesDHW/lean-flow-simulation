@@ -1,9 +1,11 @@
 import { useSyncExternalStore } from "react";
-import { computeCumulativePl, computeTickPl } from "./pl";
+import { addTickPlToCumulative, computeTickPl } from "./pl";
 import { getInitialConfig } from "./presets";
-import type { StepId } from "./step-config";
+import type { ConfigStepId, StepId } from "./step-config";
 import { createInitialState, tick } from "./tick";
-import type { CumulativePl, SimConfig, SimState, TickPl } from "./types";
+import type { CumulativePl, Item, SimConfig, SimState, TickPl } from "./types";
+
+const MAX_CHART_POINTS = 1000;
 
 export interface SimSnapshot {
 	state: SimState;
@@ -23,37 +25,85 @@ export interface SimStore {
 	triggerMarketChange(): void;
 }
 
-const DEFAULT_SEED = 42;
+const MAX_STATE_IDS = 15_000;
+
+function downsampleCumulativePl(arr: CumulativePl[]): CumulativePl[] {
+	if (arr.length <= MAX_CHART_POINTS) return arr;
+	const step = arr.length / MAX_CHART_POINTS;
+	const out: CumulativePl[] = [];
+	for (let i = 0; i < MAX_CHART_POINTS; i++) {
+		const idx =
+			i === MAX_CHART_POINTS - 1 ? arr.length - 1 : Math.floor(i * step);
+		out.push(arr[idx]);
+	}
+	return out;
+}
+
+function collectActiveItemIds(state: SimState): Set<string> {
+	const ids = new Set<string>();
+	for (const st of state.stationStates.values()) {
+		for (const id of st.inputQueue) ids.add(id);
+		for (const slot of st.inProcess) ids.add(slot.itemId);
+		for (const id of st.batchBuffer) ids.add(id);
+		for (const id of st.outputQueue) ids.add(id);
+		if (st.andonHoldItemId != null) ids.add(st.andonHoldItemId);
+	}
+	for (const t of state.transfers.values()) {
+		for (const id of t.itemIds) ids.add(id);
+	}
+	return ids;
+}
+
+function getDisplayState(state: SimState): SimState {
+	const completedIds = state.completedIds.slice(-MAX_STATE_IDS);
+	const defectiveIds = state.defectiveIds.slice(-MAX_STATE_IDS);
+	const activeIds = collectActiveItemIds(state);
+	for (const id of completedIds) activeIds.add(id);
+	for (const id of defectiveIds) activeIds.add(id);
+	const items = new Map<string, Item>();
+	for (const id of activeIds) {
+		const item = state.items.get(id);
+		if (item) items.set(id, item);
+	}
+	return {
+		...state,
+		completedIds,
+		defectiveIds,
+		totalCompletedCount: state.completedIds.length,
+		totalDefectiveCount: state.defectiveIds.length,
+		items,
+	};
+}
 
 function computeSnapshot(
 	state: SimState,
 	config: SimConfig,
 	tickPlHistory: TickPl[],
+	cumulativePl: CumulativePl[],
 ): SimSnapshot {
-	const cumulativePl = computeCumulativePl(
-		tickPlHistory,
-		config.initialInvestment,
-	);
 	return {
-		state,
+		state: getDisplayState(state),
 		config,
 		tickPlHistory,
 		cumulativePl,
 	};
 }
 
-export function createSimStore(initialStepId: StepId = "intro"): SimStore {
+export function createSimStore(
+	initialStepId: ConfigStepId = "intro",
+): SimStore {
 	let state: SimState = createInitialState(
-		getInitialConfig(initialStepId, DEFAULT_SEED),
+		getInitialConfig(initialStepId),
 	);
-	let config: SimConfig = getInitialConfig(initialStepId, DEFAULT_SEED);
+	let config: SimConfig = getInitialConfig(initialStepId);
 	let tickPlHistory: TickPl[] = [];
-	let lastCompletedCount = 0;
+	let cumulativePlChart: CumulativePl[] = [];
+	let lastCumulativePl: CumulativePl | null = null;
 	let marketChangeRequested = false;
 
 	let cachedSnapshot: SimSnapshot | null = null;
 
-	let listeners: Set<() => void> = new Set();
+	const listeners: Set<() => void> = new Set();
 	let intervalId: ReturnType<typeof setInterval> | null = null;
 
 	function invalidateSnapshot() {
@@ -71,14 +121,52 @@ export function createSimStore(initialStepId: StepId = "intro"): SimStore {
 		const result = tick(state, config, { marketChangeRequested });
 		marketChangeRequested = false;
 		state = result.state;
+		state = getDisplayState(state);
+		// #region agent log
+		if (state.tick % 500 === 0) {
+			fetch("http://127.0.0.1:7242/ingest/55b8690a-6606-448b-a0c2-fdfbe6d215f9", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					location: "store.ts:runTick",
+					message: "sim state sizes",
+					data: {
+						tick: state.tick,
+						completedIdsLen: state.completedIds.length,
+						defectiveIdsLen: state.defectiveIds.length,
+						itemsSize: state.items.size,
+						stepMarkersLen: state.stepMarkers.length,
+					},
+					timestamp: Date.now(),
+					hypothesisId: "H1-H5",
+				}),
+			}).catch(() => {});
+		}
+		// #endregion
 		const tickPl = computeTickPl(state, config, completedBefore, result.events);
-		tickPlHistory = [...tickPlHistory, tickPl];
-		lastCompletedCount = state.completedIds.length;
-		const cumPl = computeCumulativePl(tickPlHistory, config.initialInvestment);
-		const lastCum = cumPl[cumPl.length - 1];
-		if (lastCum && lastCum.cumulativeProfit <= 0) {
+		tickPlHistory = [tickPl];
+		const nextCumulative = addTickPlToCumulative(
+			lastCumulativePl,
+			tickPl,
+			config.initialInvestment,
+		);
+		if (nextCumulative.cumulativeProfit <= 0) {
 			state = { ...state, isBust: true };
 			pause();
+		}
+		lastCumulativePl = nextCumulative;
+		if (cumulativePlChart.length === 0) {
+			cumulativePlChart = [nextCumulative];
+		} else {
+			const step = Math.ceil((state.tick + 1) / MAX_CHART_POINTS);
+			if (cumulativePlChart.length * step <= state.tick + 1) {
+				cumulativePlChart.push(nextCumulative);
+				if (cumulativePlChart.length > MAX_CHART_POINTS) {
+					cumulativePlChart = downsampleCumulativePl(cumulativePlChart);
+				}
+			} else {
+				cumulativePlChart[cumulativePlChart.length - 1] = nextCumulative;
+			}
 		}
 		emit();
 	}
@@ -89,7 +177,7 @@ export function createSimStore(initialStepId: StepId = "intro"): SimStore {
 	}
 
 	function getTickIntervalMs(): number {
-		return 1000 / config.speed;
+		return 100 / config.speed;
 	}
 
 	function start() {
@@ -112,18 +200,20 @@ export function createSimStore(initialStepId: StepId = "intro"): SimStore {
 		pause();
 		state = createInitialState(config);
 		tickPlHistory = [];
-		lastCompletedCount = 0;
+		cumulativePlChart = [];
+		lastCumulativePl = null;
 		emit();
 	}
 
 	function setStep(stepId: StepId) {
 		pause();
-		config = getInitialConfig(stepId, config.seed);
+		config = getInitialConfig(stepId);
 		config.stepId = stepId;
 		state = createInitialState(config);
 		state.stepMarkers = [...state.stepMarkers, { stepId, tick: state.tick }];
 		tickPlHistory = [];
-		lastCompletedCount = 0;
+		cumulativePlChart = [];
+		lastCumulativePl = null;
 		emit();
 	}
 
@@ -143,7 +233,12 @@ export function createSimStore(initialStepId: StepId = "intro"): SimStore {
 
 	function getSnapshot(): SimSnapshot {
 		if (cachedSnapshot === null) {
-			cachedSnapshot = computeSnapshot(state, config, tickPlHistory);
+			cachedSnapshot = computeSnapshot(
+				state,
+				config,
+				tickPlHistory,
+				cumulativePlChart,
+			);
 		}
 		return cachedSnapshot;
 	}

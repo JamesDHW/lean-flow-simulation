@@ -1,4 +1,4 @@
-import type { StepId } from "./step-config";
+import type { ConfigStepId } from "./step-config";
 
 export type DepartmentId = "dept-1" | "dept-2" | "dept-3";
 
@@ -21,12 +21,16 @@ export interface StationConfig {
 	cycleTime: number;
 	cycleVariance: number;
 	capacity: number;
-	bufferBefore: number;
-	bufferAfter: number;
-	defectProbability?: number;
-	batchSize?: number;
-	wipLimit?: number;
-	andonEnabled?: boolean;
+	batchSize: number;
+	trainingEffectiveness: number;
+	andonEnabled: boolean;
+	defectProbability: number;
+	redBinCatchProbability?: number;
+	redBin?: boolean;
+	reworkSendsBack?: boolean;
+	reworkTicks?: number;
+	andonPauseTicks?: number;
+	travelTicks?: number;
 }
 
 export interface InProcessSlot {
@@ -51,33 +55,18 @@ export interface SimConfig {
 	simTicksPerSecond: number;
 	speed: number;
 	stations: StationConfig[];
-	batchSize: number;
-	arrivalRateMs: number;
 	pushOrPull: "push" | "pull";
-	defectProbability: number;
-	seed: number;
-	stepId: StepId;
-	redBins: boolean;
-	redBinsAtAllStations: boolean;
+	stepId: ConfigStepId;
 	layoutMode: LayoutMode;
-	trainingEffectiveness: number;
-	reworkSendsBack: boolean;
-	reworkTicks: number;
 	revenuePerItem: number;
 	laborCostPerTickPerEmployee: number;
 	inventoryCostPerItemPerTick: number;
 	materialCostPerItem: number;
 	defectCostCustomerShipped: number;
-	andonEnabled: boolean;
-	andonPauseTicks: number;
-	travelTicksBetweenStations: number;
 	marketChangeIntervalTicks: number | null;
 	marketChangeAutoIntervalMs: number | null;
-	defectOnlyAtEnd?: boolean;
-	defectProbabilityAtEnd?: number;
 	jidokaLineStop?: boolean;
 	initialInvestment: number;
-	managerReworkEnabled?: boolean;
 	managerReworkProbability?: number;
 }
 
@@ -122,6 +111,7 @@ export type TickEvent =
 	| { type: "defectCreated"; stationId: string; itemId: string }
 	| { type: "defectCaught"; stationId: string; itemId: string }
 	| { type: "defectShippedToCustomer"; itemId: string }
+	| { type: "materialConsumed"; itemId: string }
 	| { type: "marketChangeTriggered"; tick: number }
 	| { type: "andonTriggered"; stationId: string; itemId: string }
 	| { type: "managerReverted"; stationId: string; itemId: string }
@@ -138,11 +128,13 @@ export interface SimState {
 	stationQuality: Map<string, StationQuality>;
 	completedIds: string[];
 	defectiveIds: string[];
+	totalCompletedCount?: number;
+	totalDefectiveCount?: number;
 	lastMarketChangeTick: number | null;
 	nextMarketChangeTick: number | null;
 	lastDefectShippedTick: number | null;
 	rngState: number;
-	stepMarkers: { stepId: StepId; tick: number }[];
+	stepMarkers: { stepId: ConfigStepId; tick: number }[];
 	isRunning: boolean;
 	rejectedAtEndCount: number;
 	jidokaUntilTick?: number;
@@ -152,6 +144,7 @@ export interface SimState {
 	managerFromStationId: string | null;
 	managerToStationId: string | null;
 	managerArrivesAtTick: number | null;
+	managerResolvesAtTick: number | null;
 }
 
 export interface TickPl {

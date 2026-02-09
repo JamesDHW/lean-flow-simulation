@@ -729,11 +729,16 @@ export function ProductionLineSvg() {
 				enabled.batchSize ||
 				enabled.defectProbability ||
 				enabled.trainingEffectiveness) && (
-				<div className="w-full max-w-full min-w-0 mt-3 flex flex-wrap justify-between gap-3 overflow-hidden">
+				<div
+					className="w-full max-w-full min-w-0 mt-3 grid gap-3 overflow-x-auto"
+					style={{
+						gridTemplateColumns: `repeat(${config.stations.length}, minmax(140px, 1fr))`,
+					}}
+				>
 					{config.stations.map((station, i) => (
 						<div
 							key={station.id}
-							className="flex flex-col gap-2 px-2 py-2 rounded-sm bg-factory-surface border-2 border-factory-border min-w-[140px] flex-shrink-0"
+							className="flex flex-col gap-2 px-2 py-2 rounded-sm bg-factory-surface border-2 border-factory-border min-w-0"
 						>
 							<span className="text-xs font-medium text-text-muted">
 								Station {i + 1}

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { StepCopyLayout } from "../../sim/ui/StepCopyLayout";
 
 export const Route = createFileRoute("/sim/step-6")({
 	component: Step6,
@@ -6,67 +7,36 @@ export const Route = createFileRoute("/sim/step-6")({
 
 function Step6() {
 	return (
-		<div className="space-y-6">
-			<div>
-				<h2 className="text-xl font-semibold text-text pixel-font text-xl">
-					Pull & Blue Bins: "Stop Producing Without Demand"
-				</h2>
-				<p className="text-xl text-white mt-1">
-					Kanban / supermarket / blue bin
+		<StepCopyLayout
+			title="6. Pull & Blue Bins"
+			box1Title="What we saw (Flow)"
+			box2Title="Pull & blue bins (principle + change)"
+			box1Content={
+				<p>
+					With flow layout we had less travel and more production. But we still
+					couldn't produce fast enough. We were <strong>pushing</strong> work:
+					each station filled a batch and pushed it to the next. So when one
+					station hadn't finished its batch, the next station was idle even if
+					there was work it could do. Batches and push behaviour created
+					waiting.
 				</p>
-			</div>
-
-			<section className="space-y-3">
-				<h3 className="text-md font-medium text-accent pixel-font text-sm">
-					What you are seeing
-				</h3>
-				<p className="text-white text-xl">
-					Work only starts when the next process is ready. Inventory shrinks.
-					Some stations are idle.
+			}
+			box2Content={
+				<p>
+					In a <strong>pull</strong> system, the next station <strong>pulls</strong>{" "}
+					work when it's ready—it takes completed items from the previous
+					station instead of waiting for a full batch to be pushed. So people
+					work on things as they become available; we don't hold the next step
+					idle while we finish a batch. We introduce <strong>pull</strong>: the
+					downstream station sends an agent to get work from upstream when it
+					needs it. We also use <strong>blue bins</strong> (or equivalent logic)
+					so good items are clearly the ones that move forward; the flow of
+					"good" work is visible. The change: switch from push to{" "}
+					<strong>pull</strong> and show the agent fetching work. Less idle
+					time, more continuous work, and we use capacity better without adding
+					people.
 				</p>
-				<p className="text-white text-xl font-medium">
-					A bottleneck becomes obvious.
-				</p>
-			</section>
-
-			<section className="space-y-3">
-				<h3 className="text-md font-medium text-accent pixel-font text-sm">
-					The problem
-				</h3>
-				<p className="text-white text-xl">
-					Push hides problems with inventory. Pull exposes reality.
-				</p>
-				<p className="text-white text-xl font-medium">
-					Inventory is not an asset. It is a buffer for ignorance.
-				</p>
-			</section>
-
-			<section className="bg-factory-surface rounded-sm p-4 border-l-4 border-accent border-2 border-factory-border">
-				<h3 className="text-md font-medium text-accent pixel-font text-sm">
-					TPS principle
-				</h3>
-				<p className="text-text text-xl italic">
-					"Produce only what is needed, when it is needed."
-				</p>
-			</section>
-
-			<section className="space-y-2">
-				<h3 className="text-md font-medium text-accent pixel-font text-sm">
-					What to look for
-				</h3>
-				<ul className="text-white text-xl list-disc list-inside space-y-1">
-					<li>Dramatic reduction in WIP</li>
-					<li>Clear bottleneck</li>
-					<li>Improved stability</li>
-				</ul>
-			</section>
-
-			<section className="bg-rust/20 rounded-sm p-4 border-2 border-rust">
-				<p className="text-text text-xl">
-					<span className="font-medium">Ask yourself:</span> Why does less
-					work-in-progress lead to better performance?
-				</p>
-			</section>
-		</div>
+			}
+		/>
 	);
 }

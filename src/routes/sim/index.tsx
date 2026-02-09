@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { StepCopyLayout } from "../../sim/ui/StepCopyLayout";
 
 export const Route = createFileRoute("/sim/")({
 	component: SimIntro,
@@ -6,82 +7,42 @@ export const Route = createFileRoute("/sim/")({
 
 function SimIntro() {
 	return (
-		<div className="space-y-6">
-			<div>
-				<h2 className="text-xl pixel-font text-text">
-					Before Lean: Busy, Blind, and Unsafe
-				</h2>
-				<p className="text-xl text-white mt-1">
-					Toyota Production System house diagram
+		<StepCopyLayout
+			box1Title="The game"
+			box2Title="The Toyota Production System (TPS)"
+			box1Content={
+				<>
+					<p>
+						You're running a small factory. Pieces move through several
+						stations; at each one, a worker does a step of work. Your job is to
+						make money: you earn revenue when good items reach the customer, and
+						you pay for labour, materials, and holding inventory. If your
+						cumulative profit hits zero, you go bust.
+					</p>
+					<p>
+						Important rules: each station has a cycle time and works in batches;
+						items can be defective (e.g. wrong spec, poor quality). The customer
+						only accepts good items—defects that reach them cost you heavily
+						(returns, recalls, lost trust). From time to time the "market"
+						changes: customer preferences shift, and some in-flight work can
+						suddenly count as defective. Watch the P/L, the flow of pieces, and
+						what gets accepted or rejected.
+					</p>
+				</>
+			}
+			box2Content={
+				<p>
+					This simulation builds up the Toyota Production System (TPS)—Lean—one
+					step at a time. TPS was developed at Toyota from the 1940s onward
+					(Ohno, Shingo, and others). It isn't only for cars; it's a way of
+					thinking about any flow of work: the customer defines value, and we
+					aim to produce more <em>value</em> with the same people and materials.
+					The goal is not cost-cutting by firing people; it's eliminating waste
+					and making quality and flow visible so we can improve. In the next
+					steps we'll see a "before Lean" situation, then add one principle at a
+					time so you can feel how each change fixes a problem you've just seen.
 				</p>
-			</div>
-
-			<section className="space-y-3">
-				<h3 className="text-md font-medium text-accent pixel-font text-sm">
-					What you are seeing
-				</h3>
-				<p className="text-white text-xl">
-					You see a system that looks productive. Many people are busy. Many
-					products are moving. Output is high.
-				</p>
-				<p className="text-text text-xl font-medium">
-					And yet, profit is falling.
-				</p>
-			</section>
-
-			<section className="space-y-3">
-				<h3 className="text-md font-medium text-accent pixel-font text-sm">
-					The problem
-				</h3>
-				<p className="text-white text-xl">
-					This is the most common starting point for companies before Lean.
-				</p>
-				<p className="text-white text-xl">
-					Work is organized in silos — by department: Cutting, Assembly,
-					Testing, Shipping. Each department optimizes its own work. No one sees
-					the whole. No one owns the customer.
-				</p>
-				<p className="text-white text-xl">
-					In this system, quantity comes before quality.
-				</p>
-				<p className="text-white text-xl">
-					In Japan, we read right to left. This matters. The Toyota Production
-					System is built the same way: Quality first, then cost, then delivery.
-				</p>
-				<p className="text-white text-xl">
-					If you reverse this order, you ship faster — but you ship problems.
-					Shipping a defective car is not an inconvenience. It can be dangerous.
-					A defective brake is not "rework" — it is a risk to human life.
-				</p>
-			</section>
-
-			<section className="bg-factory-surface rounded-sm p-4 border-l-4 border-accent border-2 border-factory-border">
-				<h3 className="text-md font-medium text-accent pixel-font text-sm">
-					TPS principle
-				</h3>
-				<p className="text-text text-xl italic">
-					"Quality is built in, not inspected later."
-				</p>
-			</section>
-
-			<section className="space-y-2">
-				<h3 className="text-md font-medium text-accent pixel-font text-sm">
-					What to look for
-				</h3>
-				<ul className="text-white text-xl list-disc list-inside space-y-1">
-					<li>High utilization everywhere</li>
-					<li>Lots of movement</li>
-					<li>No clear understanding of customer value</li>
-					<li>Profit declining despite effort</li>
-				</ul>
-			</section>
-
-			<section className="bg-rust/20 rounded-sm p-4 border-2 border-rust">
-				<p className="text-text text-xl">
-					<span className="font-medium">Ask yourself:</span> If this looks
-					productive, why are we losing money?
-				</p>
-			</section>
-		</div>
+			}
+		/>
 	);
 }

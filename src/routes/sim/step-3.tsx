@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { StepCopyLayout } from "../../sim/ui/StepCopyLayout";
 
 export const Route = createFileRoute("/sim/step-3")({
 	component: Step3,
@@ -6,66 +7,33 @@ export const Route = createFileRoute("/sim/step-3")({
 
 function Step3() {
 	return (
-		<div className="space-y-6">
-			<div>
-				<h2 className="text-xl font-semibold text-text pixel-font text-xl">
-					Andon: "Making Problems Visible"
-				</h2>
-				<p className="text-xl text-white mt-1">Andon cord / Andon board</p>
-			</div>
-
-			<section className="space-y-3">
-				<h3 className="text-md font-medium text-accent pixel-font text-sm">
-					What you are seeing
-				</h3>
-				<p className="text-white text-xl">
-					When a defect appears: the line stops, a signal is raised, everyone
-					can see the problem.
+		<StepCopyLayout
+			title="3. Andon"
+			box1Title="What we saw (Training)"
+			box2Title="Andon (principle + change)"
+			box1Content={
+				<p>
+					With training and red bins at each station, we spent less time
+					processing pieces that were already defective—we pulled them out
+					earlier. But sometimes defects still slipped through because workers
+					weren't always sure if something was a defect, or they hesitated to
+					stop the line. So we still had a mix of caught defects and mistakes.
 				</p>
-				<p className="text-white text-xl">Production slows. Queues form.</p>
-			</section>
-
-			<section className="space-y-3">
-				<h3 className="text-md font-medium text-accent pixel-font text-sm">
-					The problem
-				</h3>
-				<p className="text-white text-xl">Stopping feels uncomfortable.</p>
-				<p className="text-white text-xl">
-					Managers fear: lost output, idle workers.
+			}
+			box2Content={
+				<p>
+					<strong>Andon</strong> is a signal that something is wrong and help is
+					needed. When a worker isn't sure, they shouldn't have to guess alone.
+					We introduce an andon: when a worker identifies a possible defect
+					(that would go to the red bin), they can call for the{" "}
+					<strong>Team Leader (TL)</strong>. The station pauses, the TL comes
+					over, and with their deeper knowledge of the process they help
+					decide: fixable (revert to good) or defective (to red bin). So we don't
+					push uncertainty downstream—we stop and resolve it. The change we
+					make: enable andon at stations and show the TL responding; the line
+					can pause briefly so we get the right decision instead of guessing.
 				</p>
-				<p className="text-white text-xl font-medium">
-					But hiding problems costs far more.
-				</p>
-			</section>
-
-			<section className="bg-factory-surface rounded-sm p-4 border-l-4 border-accent border-2 border-factory-border">
-				<h3 className="text-md font-medium text-accent pixel-font text-sm">
-					TPS principle
-				</h3>
-				<p className="text-text text-xl italic">"No problem is a problem."</p>
-				<p className="text-white text-xl mt-2">
-					Andon exists to: expose issues immediately, force attention, prevent
-					silent failure.
-				</p>
-			</section>
-
-			<section className="space-y-2">
-				<h3 className="text-md font-medium text-accent pixel-font text-sm">
-					What to look for
-				</h3>
-				<ul className="text-white text-xl list-disc list-inside space-y-1">
-					<li>Slower production</li>
-					<li>Fewer escaped defects</li>
-					<li>Growing awareness of recurring problems</li>
-				</ul>
-			</section>
-
-			<section className="bg-rust/20 rounded-sm p-4 border-2 border-rust">
-				<p className="text-text text-xl">
-					<span className="font-medium">Ask yourself:</span> Why is stopping the
-					line a sign of strength, not weakness?
-				</p>
-			</section>
-		</div>
+			}
+		/>
 	);
 }

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { StepCopyLayout } from "../../sim/ui/StepCopyLayout";
 
 export const Route = createFileRoute("/sim/step-4")({
 	component: Step4,
@@ -6,74 +7,38 @@ export const Route = createFileRoute("/sim/step-4")({
 
 function Step4() {
 	return (
-		<div className="space-y-6">
-			<div>
-				<h2 className="text-xl font-semibold text-text pixel-font text-xl">
-					Jidoka: "Never Pass on a Defect"
-				</h2>
-				<p className="text-xl text-white mt-1">
-					Jidoka pillar highlighted in TPS house
+		<StepCopyLayout
+			title="4. Jidoka"
+			box1Title="What we saw (Andon)"
+			box2Title="Jidoka (principle + change)"
+			box1Content={
+				<p>
+					With andon, the TL became the expert who could fix some items
+					(reverting them to good) and correctly reject others. We saw fewer
+					defects reaching the customer and a better defect rate at stations
+					where the TL intervened. But the defect rate stayed a fixed
+					probability—we didn't yet <em>learn</em> from each defect. Every time
+					we caught one we fixed or binned it, but the system didn't get better
+					at the source.
 				</p>
-			</div>
-
-			<section className="space-y-3">
-				<h3 className="text-md font-medium text-accent pixel-font text-sm">
-					What you are seeing
-				</h3>
-				<p className="text-white text-xl">
-					Defects are detected almost immediately. The line stops decisively.
-					The system refuses to continue with bad work.
+			}
+			box2Content={
+				<p>
+					<strong>Jidoka</strong> (often translated as "automation with a human
+					touch" or "quality in the process") means building in a way for the
+					process to <em>stop</em> when something is wrong, so we don't make
+					more defects. Here we use it as "stop the line on defect": when we
+					catch a defect at a red bin (or the TL rejects at andon), we don't
+					just remove that piece—we <strong>pause the whole line</strong>{" "}
+					briefly. That makes the problem visible to everyone and we reduce the
+					defect multiplier at that station so the same kind of fault is less
+					likely to repeat. The change: turn on <strong>jidoka line stop</strong>{" "}
+					so that when a defect is caught, the line pauses, the station gets a
+					chance to "learn" (lower defect rate there), and we move defective
+					items to the red bin. Result: fewer defects over time and a happier
+					customer, while building in quality instead of inspecting later.
 				</p>
-				<p className="text-white text-xl">
-					Production speed drops. Quality rises sharply.
-				</p>
-			</section>
-
-			<section className="space-y-3">
-				<h3 className="text-md font-medium text-accent pixel-font text-sm">
-					The problem
-				</h3>
-				<p className="text-white text-xl font-medium">
-					Speed without certainty is dangerous.
-				</p>
-				<p className="text-white text-xl">
-					Jidoka is not automation. It is automation with human judgment.
-				</p>
-				<p className="text-white text-xl">
-					A system that allows defects to move forward is unsafe.
-				</p>
-			</section>
-
-			<section className="bg-factory-surface rounded-sm p-4 border-l-4 border-accent border-2 border-factory-border">
-				<h3 className="text-md font-medium text-accent pixel-font text-sm">
-					TPS principle
-				</h3>
-				<p className="text-text text-xl italic">
-					"Build quality into the process."
-				</p>
-				<p className="text-white text-xl mt-2">
-					In TPS: a defect stops the entire system, the company responds
-					together, safety comes before output.
-				</p>
-			</section>
-
-			<section className="space-y-2">
-				<h3 className="text-md font-medium text-accent pixel-font text-sm">
-					What to look for
-				</h3>
-				<ul className="text-white text-xl list-disc list-inside space-y-1">
-					<li>Very few defects escaping</li>
-					<li>Frequent stoppages</li>
-					<li>High discipline, low tolerance for error</li>
-				</ul>
-			</section>
-
-			<section className="bg-rust/20 rounded-sm p-4 border-2 border-rust">
-				<p className="text-text text-xl">
-					<span className="font-medium">Ask yourself:</span> Would you rather
-					ship fast — or ship safely?
-				</p>
-			</section>
-		</div>
+			}
+		/>
 	);
 }

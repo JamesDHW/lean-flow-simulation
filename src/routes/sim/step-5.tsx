@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { StepCopyLayout } from "../../sim/ui/StepCopyLayout";
 
 export const Route = createFileRoute("/sim/step-5")({
 	component: Step5,
@@ -6,68 +7,35 @@ export const Route = createFileRoute("/sim/step-5")({
 
 function Step5() {
 	return (
-		<div className="space-y-6">
-			<div>
-				<h2 className="text-xl font-semibold text-text pixel-font text-xl">
-					Flow: "From Departments to Value Streams"
-				</h2>
-				<p className="text-xl text-white mt-1">
-					Before/after layout: departments vs flow line
+		<StepCopyLayout
+			title="5. Flow"
+			box1Title="What we saw (Jidoka)"
+			box2Title="Flow (principle + change)"
+			box1Content={
+				<p>
+					With jidoka we had fewer defects and a happier customer. But the line
+					was still too slow to meet demand—we had stations in different
+					"departments" with travel time between them, and we were losing time
+					and clarity. Eventually we couldn't sustain profit and went bust. The
+					waste wasn't just defects; it was distance and fragmentation.
 				</p>
-			</div>
-
-			<section className="space-y-3">
-				<h3 className="text-md font-medium text-accent pixel-font text-sm">
-					What you are seeing
-				</h3>
-				<p className="text-white text-xl">
-					Stations are now ordered by process. Travel is reduced. Hand-offs are
-					simplified.
+			}
+			box2Content={
+				<p>
+					In Lean we organise by <strong>flow</strong>—the path the product
+					takes—not by department silos. When stations are scattered by
+					department, travel and handoffs add time and hide problems. So we{" "}
+					<strong>rearrange the layout into flow</strong>: put stations next to
+					each other in the order of the value stream and remove the artificial
+					splits that were by "department" rather than by the actual work
+					sequence. We also set travel between adjacent stations to zero in the
+					sim so we can see the effect of flow alone. The change: switch to{" "}
+					<strong>flow layout</strong> and eliminate travel between adjacent
+					stations. Less travel, clearer flow, and we can see how much faster we
+					can serve the customer when the line is physically and logically one
+					stream.
 				</p>
-				<p className="text-white text-xl font-medium">
-					Without changing people, performance improves.
-				</p>
-			</section>
-
-			<section className="space-y-3">
-				<h3 className="text-md font-medium text-accent pixel-font text-sm">
-					The problem
-				</h3>
-				<p className="text-white text-xl">
-					Departments optimize locally. Flow optimizes globally.
-				</p>
-				<p className="text-white text-xl">
-					Motion, waiting, and transport disappear when work flows.
-				</p>
-			</section>
-
-			<section className="bg-factory-surface rounded-sm p-4 border-l-4 border-accent border-2 border-factory-border">
-				<h3 className="text-md font-medium text-accent pixel-font text-sm">
-					TPS principle
-				</h3>
-				<p className="text-text text-xl italic">"Make value flow."</p>
-				<p className="text-white text-xl mt-2">
-					Flow reveals: delays, imbalances, real work vs waste.
-				</p>
-			</section>
-
-			<section className="space-y-2">
-				<h3 className="text-md font-medium text-accent pixel-font text-sm">
-					What to look for
-				</h3>
-				<ul className="text-white text-xl list-disc list-inside space-y-1">
-					<li>Faster feedback</li>
-					<li>Fewer delays</li>
-					<li>More predictable output</li>
-				</ul>
-			</section>
-
-			<section className="bg-rust/20 rounded-sm p-4 border-2 border-rust">
-				<p className="text-text text-xl">
-					<span className="font-medium">Ask yourself:</span> Why did performance
-					improve without working harder?
-				</p>
-			</section>
-		</div>
+			}
+		/>
 	);
 }

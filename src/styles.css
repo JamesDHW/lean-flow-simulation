@@ -18,6 +18,10 @@
   --color-accent-dim: #71797e;
   --color-danger: #c62828;
   --color-danger-light: #ef5350;
+  --color-sim-blue: #1e3a5f;
+  --color-sim-blue-border: #3b82c6;
+  --color-sim-purple: #3d2e54;
+  --color-sim-purple-border: #7c5cbf;
   --font-pixel: "Press Start 2P", monospace;
   --font-pixel-body: "VT323", monospace;
 }
@@ -47,4 +51,11 @@ body::before {
 
 code {
   font-family: var(--font-pixel), monospace;
+}
+
+.box-blocky {
+  border-radius: 0;
+  border-width: 4px;
+  border-style: solid;
+  box-shadow: 4px 4px 0 0 var(--color-factory-border);
 }

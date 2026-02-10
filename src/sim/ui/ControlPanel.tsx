@@ -2,17 +2,18 @@ import { Pause, Play, RotateCcw } from "lucide-react";
 import { STEP_PRESETS } from "../presets";
 import { useSimSnapshot, useSimStore } from "../SimProvider";
 
-const MARKET_CHANGE_FLASH_TICKS = 3;
-
 export function ControlPanel() {
 	const store = useSimStore();
 	const state = useSimSnapshot((s) => s.state);
 	const config = useSimSnapshot((s) => s.config);
 	const enabled = (STEP_PRESETS[config.stepId] ?? STEP_PRESETS.intro)
 		.enabledControls;
+	const tickWindow = Math.ceil(
+		(1000 * (config.speed || 1)) / 100,
+	);
 	const marketChangeFlashing =
 		state.lastMarketChangeTick != null &&
-		state.tick - state.lastMarketChangeTick < MARKET_CHANGE_FLASH_TICKS;
+		state.tick - state.lastMarketChangeTick < tickWindow;
 
 	function handleMarketChange() {
 		store.triggerMarketChange();

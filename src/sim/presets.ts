@@ -162,7 +162,7 @@ const baseConfig: Omit<SimConfig, "stepId" | "stations"> = {
 	inventoryCostPerItemPerTick: 2,
 	materialCostPerItem: 500,
 	defectCostCustomerShipped: 500,
-	marketChangeIntervalTicks: null,
+	marketChangeIntervalTicks: 600,
 	marketChangeAutoIntervalMs: 20000,
 	initialInvestment: 1000000,
 	managerReworkProbability: 0.6,

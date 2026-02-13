@@ -1,4 +1,4 @@
-# Lean Flow Simulation
+# Lean Production Simulator
 
 Interactive web-based Lean production line simulator. Demonstrates small batches, pull vs push, WIP limits, bottlenecks, variability, and one-piece flow through seven step-by-step scenarios with P/L, metrics, and visualizations.
 
@@ -9,7 +9,7 @@ pnpm install
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Use **Home** and **Lean Flow Sim** in the nav to switch between the landing page and the simulation.
+Open [http://localhost:3000](http://localhost:3000). Use **Home** and **Lean Production Simulator** in the nav to switch between the landing page and the simulation.
 
 ## Scripts
 

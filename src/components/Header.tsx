@@ -10,7 +10,8 @@ const navLinkHomeActiveClass =
 
 export default function Header() {
 	const [isOpen, setIsOpen] = useState(false);
-	const pathname = typeof window !== "undefined" ? window.location.pathname : "/";
+	const pathname =
+		typeof window !== "undefined" ? window.location.pathname : "/";
 	const isHome = pathname === "/";
 	const isSim = pathname.startsWith("/sim") && pathname !== "/playground";
 	const isPlayground = pathname === "/playground";
@@ -28,7 +29,7 @@ export default function Header() {
 				</button>
 				<h1 className="ml-4 text-xl font-normal pixel-font tracking-tight">
 					<a href="/" className="text-text hover:text-accent">
-						Lean Flow Simulation
+						Lean Production Simulator
 					</a>
 				</h1>
 			</header>
@@ -66,7 +67,7 @@ export default function Header() {
 						className={isSim ? navLinkActiveClass : navLinkClass}
 					>
 						<PlayCircle size={20} />
-						<span className="font-medium">Lean Flow Sim</span>
+						<span className="font-medium">Simulator</span>
 					</a>
 
 					<a

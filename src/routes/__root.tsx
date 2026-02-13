@@ -17,7 +17,7 @@ export const Route = createRootRoute({
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				title: "Lean Flow Simulation",
+				title: "Lean Production Simulator",
 			},
 		],
 		links: [

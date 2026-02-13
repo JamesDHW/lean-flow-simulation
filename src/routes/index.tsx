@@ -121,7 +121,7 @@ function HomePage() {
 		<div className="min-h-screen bg-factory-bg text-text flex flex-col items-center justify-center p-6">
 			<LeanHouseIcon />
 			<h1 className="text-3xl md:text-4xl font-normal pixel-font text-text mb-4 text-center">
-				Lean Flow Simulation
+				Lean Production Simulator
 			</h1>
 			<p className="text-text-muted mb-8 max-w-xl text-center text-xl">
 				Interactive simulation demonstrating Lean production principles: start

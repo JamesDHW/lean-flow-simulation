@@ -1,4 +1,4 @@
-import { Home, Menu, PlayCircle, SquarePen, X } from "lucide-react";
+import { Home, Menu, PlayCircle, SquarePen, SquareUser, X } from "lucide-react";
 import { useState } from "react";
 
 const navLinkClass =
@@ -77,6 +77,15 @@ export default function Header() {
 					>
 						<SquarePen size={20} />
 						<span className="font-medium">Playground</span>
+					</a>
+					<a
+						href="https://jameshw.dev/"
+						target="_blank"
+						rel="noopener"
+						className={isPlayground ? navLinkActiveClass : navLinkClass}
+					>
+						<SquareUser size={20} />
+						<span className="font-medium">Author</span>
 					</a>
 				</nav>
 			</aside>

@@ -14,7 +14,7 @@ function Step5() {
 			box1Content={
 				<p>
 					With jidoka we had fewer defects and a happier customer. But the line
-					was still too slow to meet demand—we had stations in different
+					was still too slow to meet demand — we had stations in different
 					"departments" with travel time between them, and we were losing time
 					and clarity. Eventually we couldn't sustain profit and went bust. The
 					waste wasn't just defects; it was distance and fragmentation.
@@ -22,8 +22,8 @@ function Step5() {
 			}
 			box2Content={
 				<p>
-					In Lean we organise by <strong>flow</strong>—the path the product
-					takes—not by department silos. When stations are scattered by
+					In Lean we organise by <strong>flow</strong> — the path the product
+					takes — not by department silos. When stations are scattered by
 					department, travel and handoffs add time and hide problems. So we{" "}
 					<strong>rearrange the layout into flow</strong>: put stations next to
 					each other in the order of the value stream and remove the artificial

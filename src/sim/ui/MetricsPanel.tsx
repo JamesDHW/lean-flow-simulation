@@ -32,7 +32,9 @@ export function MetricsPanel() {
 				</dd>
 				<dt className="text-text-muted">Lead Time (average)</dt>
 				<dd className="text-text font-medium">
-					{Number.isFinite(leadTime) ? `${Math.round(leadTime)} minutes` : "—"}
+					{Number.isFinite(leadTime)
+						? `${Math.round(leadTime)} minutes`
+						: " — "}
 				</dd>
 				<dt className="text-text-muted">Completed Items</dt>
 				<dd className="text-text font-medium">

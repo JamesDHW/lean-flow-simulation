@@ -23,18 +23,18 @@ function Step6() {
 			}
 			box2Content={
 				<p>
-					In a <strong>pull</strong> system, the next station <strong>pulls</strong>{" "}
-					work when it's ready—it takes completed items from the previous
-					station instead of waiting for a full batch to be pushed. So people
-					work on things as they become available; we don't hold the next step
-					idle while we finish a batch. We introduce <strong>pull</strong>: the
-					downstream station sends an agent to get work from upstream when it
-					needs it. We also use <strong>blue bins</strong> (or equivalent logic)
-					so good items are clearly the ones that move forward; the flow of
-					"good" work is visible. The change: switch from push to{" "}
-					<strong>pull</strong> and show the agent fetching work. Less idle
-					time, more continuous work, and we use capacity better without adding
-					people.
+					In a <strong>pull</strong> system, the next station{" "}
+					<strong>pulls</strong> work when it's ready — it takes completed items
+					from the previous station instead of waiting for a full batch to be
+					pushed. So people work on things as they become available; we don't
+					hold the next step idle while we finish a batch. We introduce{" "}
+					<strong>pull</strong>: the downstream station sends an agent to get
+					work from upstream when it needs it. We also use{" "}
+					<strong>blue bins</strong> (or equivalent logic) so good items are
+					clearly the ones that move forward; the flow of "good" work is
+					visible. The change: switch from push to <strong>pull</strong> and
+					show the agent fetching work. Less idle time, more continuous work,
+					and we use capacity better without adding people.
 				</p>
 			}
 		/>

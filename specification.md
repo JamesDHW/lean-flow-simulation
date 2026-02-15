@@ -1,4 +1,4 @@
-# Lean Shadock Visualisation — System Specification
+# Lean Shadock Visualisation  —  System Specification
 
 ## 1. Overview
 
@@ -21,15 +21,15 @@ Discrete-tick production-line simulation with configurable stations, push/pull f
 
 Each tick runs in this order:
 
-1. **handleJidokaState** — If jidoka pause just ended, move all defects at that station to red bin and clear agent/quality pauses.
-2. **applyMarketChangeIfDueOrTriggered** — If manual trigger, fixed interval, or random interval: mark 1–3 random stations’ in-flight items as defective (market change), then clear jidoka/agents.
-3. **advanceWorkAndComplete** — For every station, reduce `inProcess` work by `tickMs`; items that finish either complete (go to batchBuffer), defect (andon/rework/red bin/rework-send-back per station config), or good → batchBuffer.
-4. **processManager** — If andon enabled and manager just arrived at andon station: with `managerReworkProbability` either revert item (no defect, back to batchBuffer) or reject (trigger jidoka). Then dispatch manager to next pending andon station (arrives in 1 tick).
-5. **handleQualityGates** — At each station with a red bin: apply defect catch probability to `outputQueue` and `batchBuffer`; caught defects removed and jidoka may trigger; uncaught remain in queue.
-6. **createOrAdvanceTransfers** — Only if jidoka is not active: decrement transfer timers; complete outbound/return phases (push: drop items at next station; pull: take from source then return with items); delete completed transfers, free agents.
-7. **moveOutputToNext** — Move items from each output/batchBuffer to next station (or last-station completion/defect handling). Creates transfers when station `travelTicks` > 0 for that leg; otherwise direct queue moves. Pull logic: downstream pull when it needs work and agent free.
-8. **startWork** — For each station (if not paused, agent not away, and pull constraints ok): take up to `capacity` items from `inputQueue`, sample cycle time, put into `inProcess`.
-9. **tryArrivals** — If first station is ready (not paused, agent not away, has capacity; in pull, output not full): add up to `batchSize` new items to first station input and emit `materialConsumed` per item.
+1. **handleJidokaState**  —  If jidoka pause just ended, move all defects at that station to red bin and clear agent/quality pauses.
+2. **applyMarketChangeIfDueOrTriggered**  —  If manual trigger, fixed interval, or random interval: mark 1–3 random stations’ in-flight items as defective (market change), then clear jidoka/agents.
+3. **advanceWorkAndComplete**  —  For every station, reduce `inProcess` work by `tickMs`; items that finish either complete (go to batchBuffer), defect (andon/rework/red bin/rework-send-back per station config), or good → batchBuffer.
+4. **processManager**  —  If andon enabled and manager just arrived at andon station: with `managerReworkProbability` either revert item (no defect, back to batchBuffer) or reject (trigger jidoka). Then dispatch manager to next pending andon station (arrives in 1 tick).
+5. **handleQualityGates**  —  At each station with a red bin: apply defect catch probability to `outputQueue` and `batchBuffer`; caught defects removed and jidoka may trigger; uncaught remain in queue.
+6. **createOrAdvanceTransfers**  —  Only if jidoka is not active: decrement transfer timers; complete outbound/return phases (push: drop items at next station; pull: take from source then return with items); delete completed transfers, free agents.
+7. **moveOutputToNext**  —  Move items from each output/batchBuffer to next station (or last-station completion/defect handling). Creates transfers when station `travelTicks` > 0 for that leg; otherwise direct queue moves. Pull logic: downstream pull when it needs work and agent free.
+8. **startWork**  —  For each station (if not paused, agent not away, and pull constraints ok): take up to `capacity` items from `inputQueue`, sample cycle time, put into `inProcess`.
+9. **tryArrivals**  —  If first station is ready (not paused, agent not away, has capacity; in pull, output not full): add up to `batchSize` new items to first station input and emit `materialConsumed` per item.
 
 ---
 
